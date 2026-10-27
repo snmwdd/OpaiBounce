@@ -1,0 +1,12 @@
+{
+  "label": "1.12.2",
+  "platform": "Macintosh",
+  "environment": "Headless Chrome with emulated platform and isolated APIs; 2400ms. Not native Windows/macOS CEF.",
+  "metrics": {
+    "spectrumAttributeWrites": 71,
+    "LayoutCount": 71,
+    "RecalcStyleCount": 120,
+    "ScriptDuration": 0.040954,
+    "TaskDuration": 0.148282
+  }
+}

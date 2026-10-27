@@ -1,0 +1,54 @@
+{
+  "label": "1.2.0",
+  "environment": "Headless Chrome + isolated API fixture, 2000x1100; not native game CEF or a 120 FPS certification",
+  "results": {
+    "menuRoundTrips": {
+      "LayoutCount": 93,
+      "RecalcStyleCount": 246,
+      "LayoutDuration": 0.010605,
+      "RecalcStyleDuration": 0.036996,
+      "ScriptDuration": 0.048838,
+      "TaskDuration": 0.242376,
+      "rafSamples": 258,
+      "rafMedianMs": 16.699999999999818,
+      "rafP95Ms": 16.700000000000728,
+      "gapsOver25ms": 0
+    },
+    "clickGuiReopen": {
+      "LayoutCount": 0,
+      "RecalcStyleCount": 81,
+      "LayoutDuration": 0,
+      "RecalcStyleDuration": 0.004182,
+      "ScriptDuration": 0.009741,
+      "TaskDuration": 0.046827,
+      "rafSamples": 87,
+      "rafMedianMs": 16.699999999999818,
+      "rafP95Ms": 16.800000000000182,
+      "gapsOver25ms": 0
+    },
+    "moduleExpandCollapse": {
+      "LayoutCount": 122,
+      "RecalcStyleCount": 129,
+      "LayoutDuration": 0.00793,
+      "RecalcStyleDuration": 0.008634,
+      "ScriptDuration": 0.033397,
+      "TaskDuration": 0.145485,
+      "rafSamples": 255,
+      "rafMedianMs": 16.69999999999891,
+      "rafP95Ms": 16.799999999999272,
+      "gapsOver25ms": 0
+    },
+    "islandToggleBurst": {
+      "LayoutCount": 150,
+      "RecalcStyleCount": 148,
+      "LayoutDuration": 0.015194,
+      "RecalcStyleDuration": 0.020604,
+      "ScriptDuration": 0.028607,
+      "TaskDuration": 0.145559,
+      "rafSamples": 163,
+      "rafMedianMs": 16.69999999999891,
+      "rafP95Ms": 16.700000000000728,
+      "gapsOver25ms": 0
+    }
+  }
+}

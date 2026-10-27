@@ -1,0 +1,14 @@
+{
+  "code_paths": {
+    "../Opai-Samsara-Shell/src/main/java/com/samsara/ui/clickgui/opai/OpaiIcons.java": "e19b9eedb6a5fb096d57a6052c9a121a16d908c9ce42855f35f22ae8fa7cc517",
+    "../Opai-Samsara-Shell/src/main/java/com/samsara/ui/hud/editor/HudEditButton.java": "988698bc4a1e87b89de645fc880a383c213a3c82dd9e8821635addb0f49959b5"
+  },
+  "original_svg_icons": [
+    "opai/image/logo.svg",
+    "opai/image/user.svg",
+    "opai/image/server.svg",
+    "opai/image/frame.svg"
+  ],
+  "close_icon": "img/menu/icon-close.svg",
+  "vector_renderer": "src/opai/VectorIcon.svelte"
+}

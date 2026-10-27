@@ -1,0 +1,13 @@
+{
+  "name": "MusicSpectrum",
+  "description": "Tritium Music Spectrum. Visibility is controlled in Tritium Music settings.",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "CenterTranslated",
+    "horizontalOffset": 0,
+    "verticalAlignment": "Bottom",
+    "verticalOffset": 45
+  },
+  "values": []
+}

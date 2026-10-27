@@ -1,0 +1,82 @@
+{
+  "theme": "1.10.0",
+  "bridge": "1.3.0",
+  "music_service": "1.0.0",
+  "full_browser_results": {
+    "startTime": "2026-10-25T22:28:52.955Z",
+    "duration": 165315.942,
+    "expected": 99,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "final_music_targeted_results": {
+    "startTime": "2026-10-25T22:37:22.414Z",
+    "duration": 17397.886,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "bridge_tests": {
+    "passed": 20,
+    "failed": 0
+  },
+  "java_service_checks": 34,
+  "jvm_members_verified": 46,
+  "svelte_check": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "live_api": {
+    "official_qr_key_available": true,
+    "gd_search_available": true,
+    "gd_stream_url_available": true,
+    "official_failure_type": "",
+    "official_http_status": 200,
+    "gd_http_status": 200,
+    "account_login_tested": false,
+    "audio_downloaded": false
+  },
+  "native_audio": [
+    {
+      "native_audio_tested": true,
+      "pcm_gain_verified": true,
+      "codec": "mp3",
+      "fixture": "self-generated silence",
+      "volume": 0,
+      "clock_advanced": true,
+      "platform": "Mac OS X"
+    },
+    {
+      "native_audio_tested": true,
+      "pcm_gain_verified": true,
+      "codec": "flac",
+      "fixture": "self-generated silence",
+      "volume": 0,
+      "clock_advanced": true,
+      "platform": "Mac OS X"
+    }
+  ],
+  "graal_loader": {
+    "graal_version": "25.0.3",
+    "actual_script_loader_tested": true,
+    "native_game_tested": false,
+    "descriptor_cleanup": true
+  },
+  "qr_decode": {
+    "fixture_qr_decoded": true
+  },
+  "service_classes_match_loader_probe": 112,
+  "package": {
+    "service_version": "1.0.0",
+    "java_release": 21,
+    "jar_bytes": 215854,
+    "jar_sha256": "7ed3453b024ec5d4e7896a719581780a2775c0497afc7a512b973f98a4aeeea2",
+    "source_sha256": "f47bfd866aedad8feda2aac62ac78398365e5a3a29152af82e8b153283684273",
+    "source_files": 81
+  },
+  "native_minecraft_game_tested": false,
+  "windows_audio_tested": false,
+  "real_account_login_tested": false
+}

@@ -1,0 +1,1 @@
+Minecraft item texture fixtures extracted from the installed Minecraft 26.3 client JAR for isolated HUD rendering tests. Original Minecraft art belongs to Mojang/Microsoft; these fixtures are not a new icon design or part of the installed Opai theme assets.

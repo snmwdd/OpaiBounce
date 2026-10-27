@@ -1,0 +1,15 @@
+{
+  "name": "Effects",
+  "description": "Shows your active status effects.",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "Left",
+    "horizontalOffset": 14,
+    "verticalAlignment": "CenterTranslated",
+    "verticalOffset": -5
+  },
+  "tweaks": [
+    "DISABLE_STATUS_EFFECT_OVERLAY"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Fps",
+  "description": "Standalone Opai FPS counter.",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "Left",
+    "horizontalOffset": 24,
+    "verticalAlignment": "Top",
+    "verticalOffset": 138
+  },
+  "values": []
+}

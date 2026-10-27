@@ -1,0 +1,35 @@
+✔ validates preview protocol, lease, bounds, numeric values and scaled viewport (0.837458ms)
+✔ auto-start registers only the requested music module, provides real connection data, and cleans up on unload/reload (1.899292ms)
+✔ world labels use projected coordinates, protected real names and three separate pills (0.607084ms)
+✔ native entity preview uses the real model, actual color, geometry and expires (0.87775ms)
+✔ manual change of existing Nametags is respected when unloading (0.33575ms)
+✔ feature controls restore the original nametag handler without stopping telemetry (0.3775ms)
+✔ disconnect clears address and latency rather than showing a stale server (0.267ms)
+✔ client shutdown cleans hooks and native state before the Script API closes the context (0.265125ms)
+✔ both host rounded rectangle signatures use exact float32 coordinates (0.657541ms)
+✔ screen-only frames read fresh previews and publish telemetry while world ticks are paused (0.478875ms)
+✔ a transient model failure retries and clears its diagnostic without disabling the feature (0.48175ms)
+✔ failed address mapping cannot kill Ping or the preview heartbeat (0.242375ms)
+✔ the user script and packaged script have exactly the same content (0.474709ms)
+✔ singleplayer mode is explicit rather than inferred from a missing address (0.386375ms)
+✔ cold startup config load replaces the map: heartbeat must write to the REST-visible map (0.737ms)
+✔ preview and feature requests use the replacement map after a config reload (0.615167ms)
+✔ world telemetry reads the actual biome and dimension and clears when leaving a world (0.43225ms)
+✔ unavailable optional biome API never interrupts server, Ping or preview (0.276292ms)
+✔ optional music service loads once, restores discovery after storage-map replacement, and closes on unload (0.408042ms)
+✔ a failed music JAR leaves native server information and ESP preview available (0.248ms)
+✔ music is a single native action module with shared Boolean/choose settings and repeatable opening (1.255167ms)
+✔ Dango mode submits real world glyphs with balanced native poses and no screen overlay (0.669584ms)
+✔ ordinary HUD skips all per-frame music Java calls and leaving Dango clears exactly once (0.490834ms)
+✔ the optional 3D render listener does not exist in normal HUD mode and is removed when changing back (0.364291ms)
+✔ stable native labels measure text once per tick snapshot instead of per render frame (3.499542ms)
+✔ render diagnostic lease pauses only custom drawing, preserves music and telemetry, then expires (0.627708ms)
+✔ an empty or unavailable world does not resolve native fonts every frame (0.258458ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 81.177917

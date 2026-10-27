@@ -1,0 +1,17 @@
+{
+  "description": "Adaptations of supplied LiquidBounce vectors. Original files remain unchanged. Folder/load/toggle geometry lives in CommandIcon.svelte and follows supplied OpaiIcons / DynamicIslandPainter.",
+  "icons": [
+    {
+      "source": "public/img/hud/keybinds/icon-keybinds.svg",
+      "source_sha256": "528100baa4c0cd725ccdb27cc0b25feacf4473d816fc810445b80b19cb72a611",
+      "output": "public/opai/adapted/keyboard.svg",
+      "output_sha256": "5be4349b64895e56a1b7795be8c904d4f25627afb644c073da0fc953f003411c"
+    },
+    {
+      "source": "public/img/menu/icon-eye.svg",
+      "source_sha256": "9bc9db11885d9c9923b533cc7e4660e48e7a09332512afd45602c252fa0783a0",
+      "output": "public/opai/adapted/eye-off.svg",
+      "output_sha256": "390702ea5c40969784141056be10da0c3083566cd91004021e3864c3c11bc05d"
+    }
+  ]
+}

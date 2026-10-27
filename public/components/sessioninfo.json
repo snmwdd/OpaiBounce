@@ -1,0 +1,32 @@
+{
+  "name": "SessionInfo",
+  "description": "Opai session timer. Kills/wins are manually configurable counters; the theme API does not report these statistics.",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "Left",
+    "horizontalOffset": 24,
+    "verticalAlignment": "Top",
+    "verticalOffset": 32
+  },
+  "values": [
+    {
+      "type": "INT",
+      "name": "Kills",
+      "value": 0,
+      "range": {
+        "min": 0,
+        "max": 99999
+      }
+    },
+    {
+      "type": "INT",
+      "name": "Wins",
+      "value": 0,
+      "range": {
+        "min": 0,
+        "max": 99999
+      }
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "copyright": "Minecraft release artwork \u00a9 Mojang / Microsoft. Not covered by theme GPL.",
+  "catalogue": "https://launchercontent.mojang.com/v2/javaPatchNotes.json",
+  "processing": "Center crop 352x176, separable CPU Gaussian blur sigma=5 pixels, kernel radius=15, PNG (offline)",
+  "images": [
+    {
+      "family": "1.21",
+      "article": "https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21",
+      "launcher_entry": "javaPatchNotes/36b2b78bc395c27a36ac37b2387429122896c69be0d344685c03f3d8e6ddc263.json",
+      "image_url": "https://staticg.sportskeeda.com/editor/2024/06/787c5-17183051526490-1920.jpg",
+      "source_file": "reports/via-sources/1.21.jpg",
+      "source_sha256": "0479422a9a2d2bfa0ad1109e664602cd329f9ff5ea017940ab5cfae55a98e836",
+      "output": "opai/version-extra/1.21.png",
+      "output_sha256": "39568adf93deae532e444f7eb51defaf79f7a50e757c1812916adfbf4f29522f"
+    },
+    {
+      "family": "1.21.2",
+      "article": "https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-2",
+      "launcher_entry": "javaPatchNotes/2c89f2f1c9d818aa0ada03f4debb228ab72fccfc14db30d98345f064a1660a15.json",
+      "image_url": "https://cdn.mos.cms.futurecdn.net/jWL3beFTcMxdESozGAEqs.jpg",
+      "source_file": "reports/via-sources/1.21.2.jpg",
+      "source_sha256": "5bfa120c6a35d88f20d896bb01bd2374dd499419e40e4a1baa010d375fdea990",
+      "output": "opai/version-extra/1.21.2.png",
+      "output_sha256": "7553b8205e6657fc8965f467d7840bad0f0fd17b6f32683bf3fefeb0c77a10ec"
+    },
+    {
+      "family": "1.21.4",
+      "article": "https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-4",
+      "launcher_entry": "javaPatchNotes/b76dfc19f9459de737111b9f6306d4970a4dbef170ccffdc7eef81c6dd62e4b0.json",
+      "image_url": "https://cdn.mos.cms.futurecdn.net/JKuiXCPDjcLjAioK9jDn4Y-1920-80.jpg",
+      "source_file": "reports/via-sources/1.21.4.jpg",
+      "source_sha256": "c90c9cdec873736ac5fef591f278354613a73b4fb01440abaf737edc5d78c571",
+      "output": "opai/version-extra/1.21.4.png",
+      "output_sha256": "d295eda94a993a21e206e4331d63e4970bc6dc985f1297759c0bc82577ff6cdc"
+    },
+    {
+      "family": "1.21.5",
+      "article": "https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-5",
+      "launcher_entry": "javaPatchNotes/46889a987ab86bd7bda8481546cf4732d73793f038c44caa25fa4b7d25ec7e1d.json",
+      "image_url": "https://launchercontent.mojang.com/v2/images/MCVSpringDropMinecraftLauncher772x350.jpg",
+      "source_file": "reports/via-sources/1.21.5.jpg",
+      "source_sha256": "5521c12d9a5f843c4ad9bac5680af0099bd068c65a2c2968653722dfe94fc3e2",
+      "output": "opai/version-extra/1.21.5.png",
+      "output_sha256": "2cca34893566d00749be253504f92ea16b77b770d7470b5ae16efc4d6ebf6f0e"
+    },
+    {
+      "family": "1.21.6",
+      "article": "https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-6",
+      "launcher_entry": "javaPatchNotes/b600edf799d7f4440fd06da853532602a5190942112916e8d5d0f6b0257c7017.json",
+      "image_url": "https://launchercontent.mojang.com/v2/images/MCVSummerDropSecondaryLauncher772x3501.png",
+      "source_file": "reports/via-sources/1.21.6.jpg",
+      "source_sha256": "ef00bf01fa20baf3dc511cadbbe687f9a0689d3becb17ddbdc63cd98a7a84e7a",
+      "output": "opai/version-extra/1.21.6.png",
+      "output_sha256": "48375cb24aa747df89fc4232da738690a5e5b15f2650a3d3e7dffbc66c631361"
+    },
+    {
+      "family": "1.21.9",
+      "article": "https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-9",
+      "launcher_entry": "javaPatchNotes/2454ff75c4e370865d4dbc5dbfe5d4e06f838caaa85e459ad8e61f9825ce2666.json",
+      "image_url": "https://launchercontent.mojang.com/v2/images/MinecraftFallDropCampaignKeyArtMinecraftLauncher772x350.png",
+      "source_file": "reports/via-sources/1.21.9.jpg",
+      "source_sha256": "ac6b9aaf4048871877f2220ad088698ca0c5d1f2ece8d71be00b935bd70972f9",
+      "output": "opai/version-extra/1.21.9.png",
+      "output_sha256": "a7115a4786ebb08885c9ef46741ca27fba1c543939281d93cc5c418429dea921"
+    },
+    {
+      "family": "1.21.11",
+      "article": "https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-11",
+      "launcher_entry": "javaPatchNotes/3c26594cfd60698ea120e64efd1ea9d6fdea35a96328b7236626f058d34de885.json",
+      "image_url": "https://cdn.mos.cms.futurecdn.net/Ep268YSyttYPCCDLtqVGRG-1920-80.jpg",
+      "source_file": "reports/via-sources/1.21.11.jpg",
+      "source_sha256": "5203829afa3cc236d44a1fcb4357e0f12c73b49304063587d824fdc06cbd1cd2",
+      "output": "opai/version-extra/1.21.11.png",
+      "output_sha256": "b0373a79fb9e4b28b205f23afa2fae6e6a928a57f4598bb8be8bf14a366ab477"
+    },
+    {
+      "family": "26.1",
+      "article": "https://www.minecraft.net/en-us/article/minecraft-java-edition-26-1",
+      "launcher_entry": "javaPatchNotes/4ace2852c44a19e2849d481ba3d816ca5f0b4c97f13aa91641e41398d2ba03bf.json",
+      "image_url": "https://launchercontent.mojang.com/v2/images/SpringDrop2026Launcher772x350.png",
+      "source_file": "reports/via-sources/26.1.jpg",
+      "source_sha256": "8b9e0019d86eacac63c61ffb80afb08942124f2489016f8ea8a8467b52cd5af5",
+      "output": "opai/version-extra/26.1.png",
+      "output_sha256": "4aacf1e95f7f9d22ef4f0f45bac1a11c970e87610f46ee2e5e81575b45d119a0"
+    }
+  ]
+}

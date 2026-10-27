@@ -1,0 +1,35 @@
+{
+  "theme": "1.9.2",
+  "bridge_unchanged": "1.2.0",
+  "hud_count": 23,
+  "full_browser_results": {
+    "startTime": "2026-10-25T20:59:29.612Z",
+    "duration": 153127.044,
+    "expected": 93,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "typecheck": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "verified_resources": {
+    "metadata_id": "opai",
+    "api_source_version": "0.41.1",
+    "component_count": 23,
+    "font_count": 18,
+    "original_assets_verified": 101,
+    "added_blurred_art_verified": 8,
+    "theme_version": "1.9.2",
+    "index_sha256": "8e4d4dd77984f3c3f120cf87a3e1313e01cf717c0ea4a1bbe167c24ca2f38d6b",
+    "bundles": {
+      "index-Co3d8iOu.css": "0815047fb70b142cb569b19cb10c6feb5e02ff98b800fcc6c32644eb4b2ea47e",
+      "index-sRfdTu_T.js": "487f249b0a0e695aac59c908d1bc6c72ce261e61cd9ebef8768cb7e1c796c297"
+    },
+    "native_game_tested": false,
+    "pixel_equivalence_certified": false
+  },
+  "native_game_tested": false,
+  "visual_checks": "Isolated browser fixtures, not a native game screenshot"
+}

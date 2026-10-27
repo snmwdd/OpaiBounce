@@ -1,0 +1,13 @@
+{
+  "name": "Coordinates",
+  "description": "Live position, biome and facing.",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "Left",
+    "horizontalOffset": 96,
+    "verticalAlignment": "Top",
+    "verticalOffset": 260
+  },
+  "values": []
+}

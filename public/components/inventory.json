@@ -1,0 +1,12 @@
+{
+  "name": "Inventory",
+  "description": "Displays your main inventory contents.",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "Left",
+    "horizontalOffset": 20,
+    "verticalAlignment": "Top",
+    "verticalOffset": 166
+  }
+}

@@ -1,0 +1,35 @@
+@font-face{font-family:'Google Sans';src:url('/opai/font/GoogleSans-Bold.ttf');font-weight:400;font-style:normal;font-display:swap} 
+@font-face{font-family:'Google Sans';src:url('/opai/font/GoogleSans-Bold.ttf');font-weight:700}
+@font-face{font-family:'Opai CJK';src:url('/opai/font/NotoSansSC-Bold.ttf');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Opai CJK';src:url('/opai/font/NotoSansSC-Bold.ttf');font-weight:700;font-display:swap}
+:root{
+ --hud-shadow-color:#0007;--hud-shadow-blur:8px;
+ --opai-hud-shadow:0 0 8px 4px var(--hud-shadow-color);
+ --opai-hud-silhouette-shadow:drop-shadow(0 0 4px var(--hud-shadow-color));
+ --accent-color:#ffb4aa;--surface-color:#1a1413;--text-color:#ede0de;--text-dimmed-color:#cdb7b4;
+ --opai-enabled:#df9d95;--opai-enabled-text:#5f150f;
+ --clickgui-panel-header-background-color:#161110;--clickgui-panel-body-background-color:#1a1413b0;
+ --clickgui-text-color:#ede0de;--clickgui-text-dimmed-color:#ede0de;
+ --clickgui-module-hover-background-color:#ede0de0c;--clickgui-module-settings-background-color:transparent;
+ --clickgui-overlay-background-color:transparent;--clickgui-input-background-color:#2e2625;
+ --clickgui-switch-track-color:#56413e;--clickgui-slider-background-color:#56413e;
+ --clickgui-dropdown-background-color:#2e2625;--clickgui-tabs-background-color:#161110da;
+ --targethud-background-color:#080808b0;--effects-background-color:#080808b0;
+ --scoreboard-background-color:#080808b0;--inventory-background-color:#080808b0;
+ --notification-background-color:#080808d0;--keybinds-background-color:#080808b0;
+}
+body,input,button,textarea,select{font-family:'Google Sans','Opai CJK',sans-serif}
+body{color:var(--text-color);font-synthesis:none}
+.opai-ripple{position:absolute;pointer-events:none;display:block;border-radius:50%;background:#fff;transform:translate(-50%,-50%);z-index:5}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:1px solid var(--accent-color);outline-offset:2px}
+.tabbed-clickgui .settings .setting{font-size:16.6px!important}
+.tabbed-clickgui .settings .name,.tabbed-clickgui .settings .suffix,.tabbed-clickgui .settings input{font-size:16.6px!important;font-family:inherit!important}
+.opai-list-button{position:relative;overflow:hidden;height:20px;min-width:55px;border:0;border-radius:6px;background:#58322dcc;color:var(--accent-color);font:700 8px 'Google Sans';cursor:pointer;transition:border-radius .2s,background .2s}
+.opai-list-button:hover{border-radius:10px;background:#72453edc}.opai-list-button:disabled{opacity:.5;cursor:default}
+@media(prefers-reduced-motion:reduce){:root:not([data-opai-motion="full"]) *,:root:not([data-opai-motion="full"]) *:before,:root:not([data-opai-motion="full"]) *:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+:root{--arraylist-text-color:#fff;--arraylist-tag-color:var(--accent-color);--arraylist-background-color:#08080899;--targethud-health-progress-color:var(--accent-color)}
+
+.tabbed-clickgui .settings .value{font-size:16.6px!important;font-family:'Google Sans',sans-serif!important;font-weight:400!important}
+
+.opai-ripple{contain:strict}

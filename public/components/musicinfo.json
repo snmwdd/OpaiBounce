@@ -1,0 +1,13 @@
+{
+  "name": "MusicInfo",
+  "description": "Tritium Music Info. Visibility is controlled in Tritium Music settings.",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "CenterTranslated",
+    "horizontalOffset": -300,
+    "verticalAlignment": "CenterTranslated",
+    "verticalOffset": -40
+  },
+  "values": []
+}

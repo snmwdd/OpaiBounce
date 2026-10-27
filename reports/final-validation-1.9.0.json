@@ -1,0 +1,32 @@
+{
+  "theme": "1.9.0",
+  "script": "1.2.0",
+  "theme_hud_count": 23,
+  "full_browser_results": {
+    "startTime": "2026-10-25T09:13:53.657Z",
+    "duration": 131198.879,
+    "expected": 83,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "final_targeted_results": {
+    "startTime": "2026-10-25T09:16:50.892Z",
+    "duration": 5717.978,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "node_tests": {
+    "passed": 18,
+    "failed": 0
+  },
+  "verified_jvm_members": 45,
+  "svelte_check": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "native_game_tested_for_this_release": false,
+  "gallery": "Isolated browser data fixtures; not a game screenshot"
+}

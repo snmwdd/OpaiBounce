@@ -1,0 +1,51 @@
+:root{--opai-hud-surface:#0009;--opai-hud-heading:#20202098;--opai-hud-text:#ede0de;--opai-hud-muted:#b9b9b9}
+.hud{--keystrokes-background-color:var(--opai-hud-surface);--keystrokes-text-color:var(--opai-hud-text);font-family:'Google Sans','Opai CJK',sans-serif;color:var(--opai-hud-text)}
+.hud .contained-element .keybinds,.hud .contained-element .scoreboard{background:var(--opai-hud-surface);border-radius:14px;font-size:18px;color:var(--opai-hud-text);overflow:hidden}
+.hud .contained-element .keybinds{min-width:220px;max-width:340px}
+.hud .contained-element .keybinds .header,.hud .contained-element .scoreboard .header{background:var(--opai-hud-heading);padding:6px 12px;color:var(--opai-hud-text)}
+.hud .contained-element .keybinds .header .title{color:var(--opai-hud-text);font-weight:400}
+.hud .contained-element .keybinds .header .icon{width:20px;height:20px;opacity:.85}
+.hud .contained-element .keybinds .entries,.hud .contained-element .scoreboard .entries{background:transparent;padding:8px 12px}
+.hud .contained-element .keybinds .row{gap:16px;margin-bottom:8px}
+.hud .contained-element .keybinds .module-name{font-size:18px;color:var(--opai-hud-text)}
+.hud .contained-element .keybinds .row.enabled .module-name,.hud .contained-element .keybinds .key-bind{color:var(--accent-color);font-weight:400}
+.hud .contained-element .keybinds .key-bind{font:15px 'Google Sans','Opai CJK',sans-serif}
+.hud .contained-element .keybinds .key-bind.muted,.hud .contained-element .keybinds .no-binds{color:var(--opai-hud-muted);font-style:normal}
+.hud .contained-element .scoreboard .row{gap:20px;line-height:26px}
+.hud .contained-element .opai-custom-text{padding:10px 14px;border-radius:14px;background:var(--opai-hud-surface);line-height:1.4;white-space:pre-wrap}
+.hud .contained-element .counter{background:var(--opai-hud-surface);border-radius:14px;padding:10px 16px;font:18px 'Google Sans','Opai CJK',sans-serif;transform:none;gap:8px}
+.hud .contained-element .counter .icon{width:32px;height:32px;image-rendering:pixelated}
+.hud .contained-element .closed-captions{gap:6px}
+.hud .contained-element .closed-caption-entry{background:var(--opai-hud-surface)!important;padding:6px 12px;border-radius:12px;font-size:18px;line-height:24px}
+.hud .contained-element .closed-caption-entry .arrow{color:var(--accent-color)}
+.hud .contained-element .notification{background:var(--opai-hud-surface);border-radius:14px;padding:12px;gap:0 12px;width:340px;margin-bottom:8px}
+.hud .contained-element .notification .icon{width:42px;height:42px;border-radius:10px;background-size:28px}
+.hud .contained-element .notification .title{font-size:18px;color:var(--opai-hud-text);line-height:24px;font-weight:400}
+.hud .contained-element .notification .message{font-size:16px;color:var(--opai-hud-muted);line-height:22px}
+.hud .contained-element .tabgui .categories,.hud .contained-element .tabgui .modules{border-radius:14px;overflow:hidden;background:var(--opai-hud-surface)}
+.hud .contained-element .tabgui .category .icon{width:40px;background:#ffffff06}
+.hud .contained-element .tabgui .category .category-icon{width:22px;height:22px}
+.hud .contained-element .tabgui .category .name{font-size:18px;padding:8px 14px;font-weight:400;background:transparent;color:var(--opai-hud-text);transition:background-color 150ms}
+.hud .contained-element .tabgui .category.selected .name,.hud .contained-element .tabgui .module.selected{background:#ffffff18}
+.hud .contained-element .tabgui .category.selected .name,.hud .contained-element .tabgui .module.enabled{color:var(--accent-color)}
+.hud .contained-element .tabgui .module{font-size:16px;padding:8px 14px;color:var(--opai-hud-text);font-weight:400}
+.hud .contained-element .hotbar-elements{background:transparent;border-radius:12px}
+.hud .contained-element .hotbar-elements .slot{position:relative}
+.hud .contained-element .hotbar-elements .slot::before{content:'';position:absolute;inset:2px;border-radius:12px;background:var(--opai-hud-surface)}
+.hud .contained-element .hotbar-elements .slider{border-color:var(--accent-color);border-radius:12px;background:#ffffff10;z-index:1;pointer-events:none}
+.hud .contained-element .offhand-slot,.hud .contained-element .hotbar .item-name{background:var(--opai-hud-surface);border-radius:12px}
+.hud .contained-element .hotbar .item-name,.hud .contained-element .hotbar .overlay-message{font:18px 'Google Sans','Opai CJK',sans-serif;color:var(--opai-hud-text)}
+.hud .contained-element .hotbar .progress{background:var(--opai-hud-surface);border-radius:10px;overflow:hidden}
+.hud .contained-element .hotbar .progress-bar{border-radius:10px;will-change:auto}
+.hud .contained-element .image{border-radius:12px}
+.hud .contained-element .taco{border-radius:12px}
+
+// Share the island's shadow on actual panel surfaces, never on empty list boxes.
+.hud .contained-element :is(.opai-inventory,.session,.effect,.opai-card,.player-info,.fps-icon,.fps-value,.keybinds,.scoreboard,.opai-custom-text,.counter,.closed-caption-entry,.notification,.tabgui .categories,.tabgui .modules){box-shadow:var(--opai-hud-shadow)}
+// Transparent shapes retain their silhouette; use the equivalent Gaussian blur
+// radius rather than casting a rectangular shadow around the list's empty area.
+.hud .contained-element :is(.arraylist,.hotbar,.taco img),.hud .draggable-element[data-component="Image"]>.contained-element{filter:var(--opai-hud-silhouette-shadow)}
+
+// Temporary A/B probe; the diagnostics owner restores it on close/unmount.
+html[data-opai-paint-probe="shadows"] .hud,html[data-opai-paint-probe="shadows"] .hud *,html[data-opai-paint-probe="shadows"] .hud *::before,html[data-opai-paint-probe="shadows"] .hud *::after{box-shadow:none!important;filter:none!important;backdrop-filter:none!important;text-shadow:none!important}
+html[data-opai-paint-probe="hud"] .hud{visibility:hidden!important}

@@ -1,0 +1,41 @@
+{
+  "theme": "1.9.1",
+  "script_unchanged": "1.2.0",
+  "full_browser_results": {
+    "startTime": "2026-10-25T20:43:09.880Z",
+    "duration": 149317.628,
+    "expected": 90,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "windows_specialist_tests_passed": 7,
+  "svelte_check": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "resources_verified": {
+    "metadata_id": "opai",
+    "api_source_version": "0.41.1",
+    "component_count": 23,
+    "font_count": 18,
+    "original_assets_verified": 101,
+    "added_blurred_art_verified": 8,
+    "theme_version": "1.9.1",
+    "index_sha256": "ccb16ab1ebd4a66ff75334a154b2f840092b7cae91a84e6f91d173e81acc2753",
+    "bundles": {
+      "index-CSUVWdL0.js": "e0a3f5d46f1d48497a255b2eff8bc4692a3efa0927c63463e681974e91bcb5d0",
+      "index-qDJEt_bl.css": "ce1de087a509a7598ec8a76ba6b30bd1bd2c81bc9a96af91f3456f2aa20ea409"
+    },
+    "native_game_tested": false,
+    "pixel_equivalence_certified": false
+  },
+  "old_build_reproduction": {
+    "windows_reduced_motion": "reproduced",
+    "clickgui_opening": "skipped",
+    "island_spring": "skipped",
+    "seven_key_ripples": "skipped",
+    "log": "windows-motion-before.log"
+  },
+  "native_windows_game_tested": false
+}

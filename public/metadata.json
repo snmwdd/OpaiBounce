@@ -1,0 +1,88 @@
+{
+  "id": "opai",
+  "name": "Opai",
+  "version": "0.1.0",
+  "authors": [
+    "Opai / StylesFoundation",
+    "Samsara UI Shell contributors",
+    "CCBlueX (integration base)"
+  ],
+  "colors": {
+    "Accent": "#ffb4aa",
+    "Tint": "#1a1413"
+  },
+  "screens": [
+    "clickgui",
+    "title",
+    "proxymanager",
+    "multiplayer",
+    "altmanager",
+    "customize",
+    "singleplayer"
+  ],
+  "overlays": [
+    "basicmenu",
+    "hud",
+    "inventory",
+    "container",
+    "disconnected",
+    "browser"
+  ],
+  "components": [
+    "Watermark",
+    "TabGui",
+    "ArrayList",
+    "Notifications",
+    "Hotbar",
+    "Scoreboard",
+    "ArmorItems",
+    "InventoryStatistics",
+    "Inventory",
+    "CraftingInventory",
+    "EnderChestInventory",
+    "TargetHud",
+    "BlockCounter",
+    "Effects",
+    "Keystrokes",
+    "Taco",
+    "Image",
+    "Text",
+    "KeyBinds",
+    "ClosedCaptions",
+    "SessionInfo",
+    "Coordinates",
+    "Fps",
+    "MusicInfo",
+    "MusicLyrics",
+    "MusicSpectrum"
+  ],
+  "fonts": [
+    "Inter-Black.ttf",
+    "Inter-Bold.ttf",
+    "Inter-ExtraBold.ttf",
+    "Inter-ExtraLight.ttf",
+    "Inter-Light.ttf",
+    "Inter-Medium.ttf",
+    "Inter-Regular.ttf",
+    "Inter-SemiBold.ttf",
+    "Inter-Thin.ttf",
+    "Consolas.ttf",
+    "NotoSansSC-Bold.ttf",
+    "GoogleSans-Bold.ttf",
+    "NotoSansSC-Regular.ttf",
+    "GoogleSans-Regular.ttf",
+    "Tahoma.ttf",
+    "Icon.ttf",
+    "Tahomabold.ttf",
+    "Product.ttf"
+  ],
+  "backgrounds": [
+    {
+      "name": "background",
+      "types": [
+        "png"
+      ]
+    }
+  ],
+  "values": []
+}

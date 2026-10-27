@@ -1,0 +1,12 @@
+{
+  "label": "1.12.2-final",
+  "platform": "Windows NT 10.0",
+  "environment": "Headless Chrome with emulated platform and isolated APIs; 2400ms. Not native Windows/macOS CEF.",
+  "metrics": {
+    "spectrumAttributeWrites": 75,
+    "LayoutCount": 75,
+    "RecalcStyleCount": 122,
+    "ScriptDuration": 0.039198,
+    "TaskDuration": 0.15166
+  }
+}

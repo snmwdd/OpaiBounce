@@ -1,0 +1,20 @@
+import {test,expect} from '@playwright/test';
+import fs from 'node:fs';
+import {setup} from './fixtures';
+const builds=process.env.OPAI_PAINT_COMPARE==='1'?[{label:'1.12.1-repeat',origin:'http://127.0.0.1:4174'},{label:'1.12.2-repeat',origin:'http://127.0.0.1:4173'}]:[{label:process.env.OPAI_PAINT_LABEL??'current',origin:''}];
+for(const build of builds)for(const os of ['Windows NT 10.0','Macintosh'])test(`software paint cost ${build.label} ${os}`,async({page})=>{
+ await page.addInitScript(ua=>{Object.defineProperty(navigator,'userAgent',{value:ua});Object.defineProperty(navigator,'platform',{value:ua.includes('Windows')?'Win32':'MacIntel'});},os);
+ const api=await setup(page);api.modules.forEach(m=>m.enabled=true);
+ const defaults=(values:any[]=[]):any=>Object.fromEntries(values.map(v=>[v.name[0].toLowerCase()+v.name.slice(1),v.type==='CONFIGURABLE'?defaults(v.values):v.type==='TOGGLEABLE'?{enabled:v.value,...defaults(v.values)}:v.type==='CHOICE'?{active:v.value,value:defaults(v.choices.find((c:any)=>c.name===v.value)?.values)}:v.value]));
+ await page.route('**/api/v1/client/components/opai',r=>r.fulfill({json:['Watermark','ArrayList','Keystrokes','SessionInfo','Inventory','TargetHud'].map((name,i)=>({id:name,name,settings:{enabled:true,...defaults(JSON.parse(fs.readFileSync(`public/components/${name.toLowerCase()}.json`,'utf8')).values),alignment:{horizontalAlignment:'Left',horizontalOffset:20+i*280,verticalAlignment:'Top',verticalOffset:60}}}))}));
+ await page.goto(build.origin+'/#/hud?static&preview');await page.evaluate(()=>document.fonts.ready);await expect(page.locator('.island')).toHaveAttribute('data-motion-active','false');await page.waitForTimeout(500);
+ const cdp=await page.context().newCDPSession(page),browserCdp=await page.context().browser()!.newBrowserCDPSession();const gpu=await browserCdp.send('SystemInfo.getInfo');await browserCdp.detach();await cdp.send('Performance.enable');const before=Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map(m=>[m.name,m.value]));
+ await page.evaluate(()=>{const w=window as any;w.__paintRaf=[];w.__paintCollect=true;let previous=0;function sample(t:number){if(previous)w.__paintRaf.push(t-previous);previous=t;if(w.__paintCollect)requestAnimationFrame(sample);}requestAnimationFrame(sample);});
+ const trace:any[]=[];cdp.on('Tracing.dataCollected',e=>trace.push(...e.value));await cdp.send('Tracing.start',{categories:'devtools.timeline,disabled-by-default-devtools.timeline',transferMode:'ReportEvents'});
+ for(let i=0;i<20;i++){api.emit('fps',{fps:500+i});api.emit('key',{key:'key.keyboard.w',action:i%2});api.emit('moduleToggle',{moduleName:'Flight',enabled:i%2===0});await page.waitForTimeout(100);}await page.waitForTimeout(1000);
+ const finished=new Promise<void>(resolve=>cdp.once('Tracing.tracingComplete',()=>resolve()));await cdp.send('Tracing.end');await finished;
+ const after=Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map(m=>[m.name,m.value]));const metrics:any={};for(const k of ['ScriptDuration','TaskDuration','LayoutDuration','RecalcStyleDuration'])metrics[k]=after[k]-before[k];
+ const events:any={};for(const name of ['Paint','PrePaint','RasterTask']){const entries=trace.filter(e=>e.name===name&&e.ph==='X');events[name]={count:entries.length,totalMs:entries.reduce((s,e)=>s+(e.dur??0),0)/1000};}
+ const cadence=await page.evaluate(()=>{const w=window as any;w.__paintCollect=false;const xs=w.__paintRaf.sort((a:number,b:number)=>a-b);return{frames:xs.length,median:xs[Math.floor(xs.length/2)]};});
+ const label=build.label,platform=os.includes('Windows')?'windows':'macos';fs.writeFileSync(`reports/software-paint-${label}-${platform}.json`,JSON.stringify({label,platform,environment:'Chrome --disable-gpu with emulated OS and REST/WS fixtures; NOT Minecraft CEF',gpu:gpu.gpu.featureStatus,cadence,metrics,events},null,2)+'\n');console.log(JSON.stringify({label,platform,cadence,metrics,events}));await cdp.detach();expect(api.errors).toEqual([]);
+});

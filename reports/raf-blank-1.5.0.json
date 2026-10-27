@@ -1,0 +1,6 @@
+{
+  "environment": "Fresh headless Chrome, blank page, 45 RAF intervals; same local host as full regression",
+  "medianMs": 33.3,
+  "p95Ms": 33.4,
+  "native_game": false
+}

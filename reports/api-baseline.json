@@ -1,0 +1,26 @@
+{
+  "source_archive": "LiquidBounce-nextgen.zip",
+  "source_mod_version": "0.41.1",
+  "descriptor_factory": "LiquidBounce-nextgen/src/main/kotlin/net/ccbluex/liquidbounce/config/types/group/JsonValueFactory.kt",
+  "factory_sha256": "3a59ae7d63e49417c8324d2792db96a8408d33dbc26167ce4f8987656f0a0e50",
+  "supported_json_descriptor_types": [
+    "BLOCK",
+    "BOOLEAN",
+    "CHOICE",
+    "CHOOSE",
+    "COLOR",
+    "CONFIGURABLE",
+    "FILE",
+    "FLOAT",
+    "FLOAT_RANGE",
+    "INT",
+    "INT_RANGE",
+    "ITEM",
+    "MULTI_CHOOSE",
+    "REGISTRY_LIST",
+    "TEXT",
+    "TOGGLEABLE"
+  ],
+  "legacy_adaptation": false,
+  "native_latest_runtime_verified": false
+}

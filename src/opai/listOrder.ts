@@ -1,0 +1,3 @@
+export function parseOrder(raw:string|null):string[]{try{const value=JSON.parse(raw??'[]');return Array.isArray(value)?[...new Set(value.filter((k:unknown):k is string=>typeof k==='string'&&k.length<=500))].slice(0,10000):[];}catch{return[];}}
+export function ordered<T>(items:T[],order:string[],key:(item:T)=>string):T[]{const positions=new Map(order.map((k,i)=>[k,i]));return [...items].sort((a,b)=>(positions.get(key(a))??Infinity)-(positions.get(key(b))??Infinity));}
+export function moveOrder(keys:string[],source:string,target:string,before:boolean):string[]{if(source===target||!keys.includes(source)||!keys.includes(target))return keys;const next=keys.filter(k=>k!==source);next.splice(next.indexOf(target)+(before?0:1),0,source);return next;}

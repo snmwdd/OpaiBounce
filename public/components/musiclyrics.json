@@ -1,0 +1,13 @@
+{
+  "name": "MusicLyrics",
+  "description": "Tritium Music Lyrics. Visibility is controlled in Tritium Music settings.",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "Right",
+    "horizontalOffset": 40,
+    "verticalAlignment": "CenterTranslated",
+    "verticalOffset": 60
+  },
+  "values": []
+}
