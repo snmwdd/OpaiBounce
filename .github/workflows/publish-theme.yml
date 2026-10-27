@@ -1,0 +1,34 @@
+
+name: Publish OpaiBounce Theme
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Theme from GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download Dev0.11 \
+            --repo snmwdd/OpaiBounce \
+            --pattern "OpaiBounce_0.1.zip"
+
+      - name: Publish Theme to LiquidBounce Marketplace
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: |
+          curl --fail-with-body \
+            -X POST \
+            "https://api.liquidbounce.net/api/v3/marketplace/865/revisions" \
+            -H "Authorization: Bearer $API_TOKEN" \
+            -F "file=@OpaiBounce_0.1.zip" \
+            -F "version=v0.1.0" \
+            -F "changelog=Initial OpaiBounce release" \
+            -F "channel=alpha"
