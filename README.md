@@ -1,21 +1,8 @@
 # OpaiBounce
 
-为 LiquidBounce 制作的 Opai 风格主题与配套 LiquidScript。当前主题 **0.1.1**，脚本 **1.5.0**。
+# 请必须装备此脚本才能正常运行
 
-包含主菜单、ClickGUI、HUD、灵动岛、ESP / Nametags 预览、账号文件夹、服务器与存档排序，以及 Tritium Music 音乐集成。
 
-## 目录
-
-```text
-src/          Svelte / TypeScript 主题源码
-script/       唯一的 OpaiBounceScript.js、桥接 API 和脚本测试
-music/        Java 音乐服务、解码器源码、上游归属与测试
-public/       主题描述、字体、图片和其他运行资源
-tools/        音乐编译、资源校验和发行包生成工具
-tests/        主题浏览器回归与隔离 API 夹具
-```
-
-构建输出在 `build/`，发行 ZIP 在 `release/`，均不提交到 Git。音乐 JAR 和对应源码 ZIP 由源码构建生成，不需要将客户端仓库、游戏目录或旧发行包放进本仓库。
 
 ## 环境
 
