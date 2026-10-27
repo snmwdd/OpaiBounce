@@ -1,0 +1,34 @@
+
+name: Publish OpaiBounce Script
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Script from GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download Dev0.11 \
+            --repo snmwdd/OpaiBounce \
+            --pattern "OpaiBounceScript.js"
+
+      - name: Publish Script to LiquidBounce Marketplace
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: |
+          curl --fail-with-body \
+            -X POST \
+            "https://api.liquidbounce.net/api/v3/marketplace/866/revisions" \
+            -H "Authorization: Bearer $API_TOKEN" \
+            -F "file=@OpaiBounceScript.js" \
+            -F "version=v1.5.0" \
+            -F "changelog=Initial release of OpaiBounce Script" \
+            -F "channel=alpha"
