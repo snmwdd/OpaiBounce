@@ -1,0 +1,413 @@
+{
+  "archives": {
+    "Opai-Samsara-Shell.zip": "a92a2c1803fdfda88b4ecd55c291acb8a4a2cd167c4bd4cb3f40ec35af0fcd57",
+    "LiquidBounce-nextgen.zip": "164bdae5e9f8c03c75a01552b900621af331e8a279d9531a9ee22f61f797764b"
+  },
+  "assets": [
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/badexplosion/kill_2_2.wav",
+      "theme_path": "opai/badexplosion/kill_2_2.wav",
+      "sha256": "2c7247cfb3ff5d8b1ca22c452eadce60fd4f249e8efe1a211f8382be01c41b66"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/badexplosion/snd_badexplosion.wav",
+      "theme_path": "opai/badexplosion/snd_badexplosion.wav",
+      "sha256": "0c1f703a01e24c3a70d24efe228b22f325b1c7884ac36e579a1b97a783462a81"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/badexplosion/spritesheet.png",
+      "theme_path": "opai/badexplosion/spritesheet.png",
+      "sha256": "5a04fc4b4fd961d938efd6cb7fea5f1ef273c7ca296404abe3c7fae86e59456d"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/font/Consolas.ttf",
+      "theme_path": "fonts/Consolas.ttf",
+      "sha256": "423504695a3de1f80c618e3e6ead215a6b891be06c179bf048bb5a80d5d0eda3"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/font/GoogleSans-Bold.ttf",
+      "theme_path": "fonts/GoogleSans-Bold.ttf",
+      "sha256": "804fdad80c0a5bf7ea7a2396f7368abbcb4d948f31f0ac88b199dc4c18ef3391"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/font/GoogleSans-Regular.ttf",
+      "theme_path": "fonts/GoogleSans-Regular.ttf",
+      "sha256": "f8914b020e2c78fe86ca14198095455139f08047b8b52ab69003cb5af35cbbc0"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/font/Icon.ttf",
+      "theme_path": "fonts/Icon.ttf",
+      "sha256": "b0648a9016c46ff7f0be5aa1fcea98f43cb4a1845c653f38f4137c03e50b5c35"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/font/NotoSansSC-Bold.ttf",
+      "theme_path": "fonts/NotoSansSC-Bold.ttf",
+      "sha256": "e414444c28bed174ec47f1d968fe8109ab935702022f4f082b2edde99607eb7d"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/font/NotoSansSC-Regular.ttf",
+      "theme_path": "fonts/NotoSansSC-Regular.ttf",
+      "sha256": "dc71173babc38dfd019912965f2b4b3421fb347ebd854e7b96f64ad63673924a"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/font/Product.ttf",
+      "theme_path": "fonts/Product.ttf",
+      "sha256": "b34cbb71d75b84eb4925f51e050249f65fb3e3550133aba0a4c161c6820aec82"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/font/Tahoma.ttf",
+      "theme_path": "fonts/Tahoma.ttf",
+      "sha256": "b890858df485549d20fcb0a2c519dffe9c5c155d16b55e0b9252d6e66db555e5"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/font/Tahomabold.ttf",
+      "theme_path": "fonts/Tahomabold.ttf",
+      "sha256": "068d37c156feb0df03875b6dc08b39b10a9f0a55b14a520358de04b0b3a9d8f8"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/alt_manager.svg",
+      "theme_path": "opai/image/alt_manager.svg",
+      "sha256": "ab75360315242a8f4cc95bd2cef6bea9e39b0bbeb07cd9c612637e7c1c2002f2"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/back.svg",
+      "theme_path": "opai/image/back.svg",
+      "sha256": "f5d51d951c1a30268fb2ceae3e30c12d9f4d5aeeb2293b0b8fa80514fd4cba59"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/background.png",
+      "theme_path": "opai/image/background.png",
+      "sha256": "8e0cb74dabf1dc897f7c50b109adf5bc842f40dd1f11cf5c802ace1ad925552a"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/config.svg",
+      "theme_path": "opai/image/config.svg",
+      "sha256": "91d936ad4dbd496309aa1b45902ab6de3e4b0933c5171305ef3efd9f1501a3ec"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/download.svg",
+      "theme_path": "opai/image/download.svg",
+      "sha256": "dbf0cbb4b280b02c98a0c9a578c7cd4ba2279fc973d152f3d03128fa40b5df6f"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/egg/Christmas_hat.svg",
+      "theme_path": "opai/image/egg/Christmas_hat.svg",
+      "sha256": "40a96db73c0e127718c118ff08f0ec8ff2bb75bd3b44e6b04646be8e3361e14f"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/egg/spr_blocktree_parts_1.png",
+      "theme_path": "opai/image/egg/spr_blocktree_parts_1.png",
+      "sha256": "dd438709e9b2067b171f9c700307cec2bebbd82bba03415736115c779e75fe5d"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/egg/spr_blocktree_parts_2.png",
+      "theme_path": "opai/image/egg/spr_blocktree_parts_2.png",
+      "sha256": "cbaa7db7cb1c180f0268b0f5a3ec382ec76cb770373d96c02a708c60f9172d31"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/egg/spr_blocktree_parts_3.png",
+      "theme_path": "opai/image/egg/spr_blocktree_parts_3.png",
+      "sha256": "e99ac2d94b863dd1731bfa8543ecc5e3b87c3c4754a32a8ec965d556188ab1b6"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/frame.svg",
+      "theme_path": "opai/image/frame.svg",
+      "sha256": "f81f9dd3a16162b9ec2c78d0bc85c1853ee6cccef33a7c6e80ba0d6e52e3527c"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/logo/part1.svg",
+      "theme_path": "opai/image/logo/part1.svg",
+      "sha256": "2429c8ca218545738a6d93efbc2e4800ccf96433bd8194beb00de7d28c3cc410"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/logo/part2.svg",
+      "theme_path": "opai/image/logo/part2.svg",
+      "sha256": "0579fd22e20866a29141cb6c5623647f877ea0beadca183528e0883dc57d9407"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/logo/part3.svg",
+      "theme_path": "opai/image/logo/part3.svg",
+      "sha256": "be9b485e19456d942cc1f5d2b7962704fad9045153273e3df5fa82c448285ba9"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/logo/part4.svg",
+      "theme_path": "opai/image/logo/part4.svg",
+      "sha256": "ef3dffbfbf8c1a4a5417e6a0c928d8d81ba28d6abfbb29ac73f863f3d76e6b55"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/logo.svg",
+      "theme_path": "opai/image/logo.svg",
+      "sha256": "9e7c5f251597ea87c845088b4f81dc325089e26f2b1939cc57e398859d32b0c4"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/multi_player.svg",
+      "theme_path": "opai/image/multi_player.svg",
+      "sha256": "4bec38f22d37b5fcd5529bf645194ac1055b80a6df0e70d488270b07c1ca03c7"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/options.svg",
+      "theme_path": "opai/image/options.svg",
+      "sha256": "2b5c20d5d0593cdf46cfbbc9588321a72f3aead365c19d0a93f4c1cee363bf77"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/pig2.svg",
+      "theme_path": "opai/image/pig2.svg",
+      "sha256": "fd4f79021292117b71f5191f805ed9fb3099c4645f2ad95e566f5328927bcdd3"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/proxy_manager.svg",
+      "theme_path": "opai/image/proxy_manager.svg",
+      "sha256": "7dfb37e3e329473c2915e5a98c2e775fc719a62c569e87e6dbd84cf30a04aba1"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/server.svg",
+      "theme_path": "opai/image/server.svg",
+      "sha256": "bcab9c6f614d861dcfae55176ae68fdf5d70beb3f82260192176d95fd19c389a"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/shutdown.svg",
+      "theme_path": "opai/image/shutdown.svg",
+      "sha256": "c2a664739da19fe23706b54e40dc022ebac1f561b33e56cff2d4d6e551028fd8"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/single_player.svg",
+      "theme_path": "opai/image/single_player.svg",
+      "sha256": "c71aafcbf4fa482528447f3cafac823da19492b9c8009651b9ccd97e6809affe"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/skull.svg",
+      "theme_path": "opai/image/skull.svg",
+      "sha256": "2aa9a9151ef7f9c4ed71592e51e4b875e83d6f4e13625cf5306c61232d703113"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/stats.svg",
+      "theme_path": "opai/image/stats.svg",
+      "sha256": "c000dc2ea98a4945c3b1d73bf10afa40117d1d0a804bfa90f834b582fa2fc48a"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/image/user.svg",
+      "theme_path": "opai/image/user.svg",
+      "sha256": "687a001648a46ec9a4c16fda864428591893eea82f41b1384b13bf89dccde8f5"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/absorption.png",
+      "theme_path": "opai/samsara/potion/absorption.png",
+      "sha256": "87d21f6ffc0e497c991eb7891caf80cc6746866528489fec825d7f3ea609ea3a"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-0.png",
+      "theme_path": "opai/samsara/potion/digit-0.png",
+      "sha256": "f4b39df47ccdcc4981caf1189eec7080d0d6528639a99b9a5b7b5af246670df5"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-1.png",
+      "theme_path": "opai/samsara/potion/digit-1.png",
+      "sha256": "773252266d3b035f85f0b4c0d87927e5274521d5c378610aba2e3a1c3641a2e3"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-2.png",
+      "theme_path": "opai/samsara/potion/digit-2.png",
+      "sha256": "80d2d6ca7119586fa09895198aa28f24c6adf0da47ea0b53c0594363935f4fa1"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-3.png",
+      "theme_path": "opai/samsara/potion/digit-3.png",
+      "sha256": "9639d170df42e8f14969b5e7295d04aae0be3b6e6b557d4e6eae6fcf67e297cf"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-4.png",
+      "theme_path": "opai/samsara/potion/digit-4.png",
+      "sha256": "084be91051c461d8c9f49b85ece4658c350eee56a1d4e11634f6801fe0fcc62a"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-5.png",
+      "theme_path": "opai/samsara/potion/digit-5.png",
+      "sha256": "760089a918eba8725731c9eee7bd9639cd8108f759df269a4c208763b587dd96"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-6.png",
+      "theme_path": "opai/samsara/potion/digit-6.png",
+      "sha256": "85054ce0e18ae9278ccf22bcec9d9bdce2654d7204da48ad4549af34997368b2"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-7.png",
+      "theme_path": "opai/samsara/potion/digit-7.png",
+      "sha256": "8bdf15ec25b244e4f1e048b2f6cd9642031fbe748cd98ba3e07de3845e324cd8"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-8.png",
+      "theme_path": "opai/samsara/potion/digit-8.png",
+      "sha256": "98f2d0c6b9902282477093ec576d7162bfc76c48c1a54c93f0697095e1b0b1c9"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-9.png",
+      "theme_path": "opai/samsara/potion/digit-9.png",
+      "sha256": "7b9230aee0ba490bbf5414edaac61e2d5f61cb43336cd14e7dac2df18c2f0607"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/digit-colon.png",
+      "theme_path": "opai/samsara/potion/digit-colon.png",
+      "sha256": "72fdee430557dde6095828e1dc23c622684c01e5769141d8a7e7a98bad303abb"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/fire_resistance.png",
+      "theme_path": "opai/samsara/potion/fire_resistance.png",
+      "sha256": "9c691fcc3d28d4c5db49da5cb8af5baa35caba1e7e22e09829672172ae2ce0d8"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/haste.png",
+      "theme_path": "opai/samsara/potion/haste.png",
+      "sha256": "8dd1f276ad4e81d6fbb861c86250a98946a57c5b456dd70842812a3e895440af"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/invisibility.png",
+      "theme_path": "opai/samsara/potion/invisibility.png",
+      "sha256": "d073ceb13528e1183f29bcf9273b9512502349e7fc1a768d2c25e5527d056596"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/jump_boost.png",
+      "theme_path": "opai/samsara/potion/jump_boost.png",
+      "sha256": "f4cb2a3aa11d8010dfce7bbd981c06ef28a35bea64485f45d8d89a52e0065d7c"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/mining_fatigue.png",
+      "theme_path": "opai/samsara/potion/mining_fatigue.png",
+      "sha256": "c9f746a2b57e814c76f25e7ec5a9db15392b4b42f52070058934a9b05d6a42ae"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/nausea.png",
+      "theme_path": "opai/samsara/potion/nausea.png",
+      "sha256": "f0e02a72231b9474200bedfcce0fe03f560df7d0e7421213f0e546e68e5f962d"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/night_vision.png",
+      "theme_path": "opai/samsara/potion/night_vision.png",
+      "sha256": "35ccc30caf64cb1aa5416d0683e20f1beda26508f087925827f70d3ba60fbeee"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/poison.png",
+      "theme_path": "opai/samsara/potion/poison.png",
+      "sha256": "d3f42d7b66fa484afcb4baf9720b0d59476fce5300aa0423ac7d9902e89cf51b"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/regeneration.png",
+      "theme_path": "opai/samsara/potion/regeneration.png",
+      "sha256": "f175307808f9bed7d0e98a6b9d5beca2dd5609a9a2f3c3a919a8e31a2a5a7829"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/resistance.png",
+      "theme_path": "opai/samsara/potion/resistance.png",
+      "sha256": "48ce170cb4477f1103c2f796a81a017ab6c5bb63ac3afec284b0c16b2d15cc2b"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/saturation.png",
+      "theme_path": "opai/samsara/potion/saturation.png",
+      "sha256": "95048fa258d329ac19f938f9f3e38b153e961f77dbec30b97a4f569f6b78405e"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/slowness.png",
+      "theme_path": "opai/samsara/potion/slowness.png",
+      "sha256": "2d3d66e9d96406c724428b62ef9c1ba3f3c173127714258fcd250d7be116f333"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/speed.png",
+      "theme_path": "opai/samsara/potion/speed.png",
+      "sha256": "0d845899d7acebdf46a75ea50208d164baf53d43e01b372d46f37bf8acf96ecf"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/strength.png",
+      "theme_path": "opai/samsara/potion/strength.png",
+      "sha256": "fa64b69bfe6ca991976bc6568129013675c546fdf90065c244a5a099f00057b3"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/water_breathing.png",
+      "theme_path": "opai/samsara/potion/water_breathing.png",
+      "sha256": "1c9fc8a4202c5be25d4e614b067e1c3c541dcda35846a7ba005a54bfab9d6859"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/samsara/potion/weakness.png",
+      "theme_path": "opai/samsara/potion/weakness.png",
+      "sha256": "cd0a3a16ede668984801e2a4da4c82fb47ea47f9b5dd0a5ec4303ab276504451"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.10.png",
+      "theme_path": "opai/version/1.10.png",
+      "sha256": "348433c969bf32f1eb29518a4e3f366146dea2f72f25ac571c952c070fd0fe8f"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.11.png",
+      "theme_path": "opai/version/1.11.png",
+      "sha256": "9085f36f381e849bd6e6b0563000278a240d8e9261a12d75334972965bfdc2b8"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.12.png",
+      "theme_path": "opai/version/1.12.png",
+      "sha256": "7492665bc8f3ada6ae8ad8ac68b9de4e48d97aacb7a182f8eef975ff6d066269"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.13.png",
+      "theme_path": "opai/version/1.13.png",
+      "sha256": "4d1ec576b2a748b60c6148de44fa8b3745cefd22ca28ea02a4ea8e408ec0204f"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.14.png",
+      "theme_path": "opai/version/1.14.png",
+      "sha256": "4c422b3d3348917feba86ce23e27eb12eadec0d08a84599fed275d413c3691dc"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.15.png",
+      "theme_path": "opai/version/1.15.png",
+      "sha256": "989a3414e2327b6dd000757f821dee2688e880bff04044e0dc847470bdbf6ea3"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.16.png",
+      "theme_path": "opai/version/1.16.png",
+      "sha256": "18fa2f51ed1eda46198f1a1559788cc4a8d4731661f51885d102bb9451885db8"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.17.png",
+      "theme_path": "opai/version/1.17.png",
+      "sha256": "59106083d9248937576db62a7e45d84abbce1bd93b164c70ecca035317c24c9a"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.18.png",
+      "theme_path": "opai/version/1.18.png",
+      "sha256": "f018b993bef670d42cec3428367fb0a00509d64b56ff0e1d4ec4bd60a5883eac"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.19.png",
+      "theme_path": "opai/version/1.19.png",
+      "sha256": "9ede8758926c8c250734fee4ff7c6299b36dc2227ac3d0d52321bc904dd07697"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.20.png",
+      "theme_path": "opai/version/1.20.png",
+      "sha256": "8bc92dda1d4be11455396600df8eca68de5378ea35bedefdc03acf94608ba11f"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.7.png",
+      "theme_path": "opai/version/1.7.png",
+      "sha256": "695c71985c0d7303be72593c1fa54169b60502e9c0049ce052ee139db8cb3b8e"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.8.png",
+      "theme_path": "opai/version/1.8.png",
+      "sha256": "e7478d21a5aa946966977bf5d994909479cecd74f7985d228a8dfb8bdf9bebea"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/1.9.png",
+      "theme_path": "opai/version/1.9.png",
+      "sha256": "3a17ae989369ecdd1d8eca47c2ba013e8660cf311d620fe30723a06ba62cd6de"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/26.2.png",
+      "theme_path": "opai/version/26.2.png",
+      "sha256": "a42d554cdd1565d52646fe26a5591d34b4a616d2aa9cc2f30154a685bfa25469"
+    },
+    {
+      "source_path": "Opai-Samsara-Shell/src/main/resources/assets/minecraft/opai/version/26.3.png",
+      "theme_path": "opai/version/26.3.png",
+      "sha256": "b0ba9dd2fa05ef8a2fa91672c2c02035d259e8a2c1a204571d1d74ac64e7ca2e"
+    }
+  ]
+}

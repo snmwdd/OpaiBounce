@@ -1,16 +1,19 @@
 {
   "name": "opai-liquidbounce-theme",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build:music": "python3 tools/build_music.py",
+    "build": "npm run build:music && vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "test": "playwright test",
-    "verify": "python3 tools/verify_theme.py",
-    "package": "python3 tools/package_theme.py"
+    "test": "node --test script/tests/bridge.test.cjs",
+    "test:browser": "playwright test",
+    "test:music": "python3 tools/build_music.py --test",
+    "verify": "python3 tools/verify.py",
+    "package": "npm run build && python3 tools/package.py"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
@@ -35,5 +38,10 @@
     "nouislider": "^15.7.1",
     "qrcode": "^1.5.4",
     "svelte-spa-router": "^4.0.1"
+  },
+  "description": "Opai-style LiquidBounce theme and companion LiquidScript",
+  "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=22"
   }
 }

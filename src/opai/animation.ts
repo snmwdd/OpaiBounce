@@ -32,18 +32,19 @@ function interpolate(a:unknown,b:unknown,t:number):string{
 export function playMotion(node:HTMLElement,frames:Keyframe[],duration:number,easing='linear'):MotionHandle{
     // Main-thread style invalidation also works with Windows software rendering.
     if(!usesSoftwareMotion()&&typeof node.animate==='function')return node.animate(frames,{duration,easing});
-    const keys=['transform','opacity'].filter(key=>frames.some(frame=>frame[key as keyof Keyframe]!=null));
-    const previous=new Map(keys.map(key=>[key,node.style.getPropertyValue(key)]));
+    const cssName=(key:string)=>key==='borderRadius'?'border-radius':key;
+    const keys=['transform','opacity','borderRadius'].filter(key=>frames.some(frame=>frame[key as keyof Keyframe]!=null));
+    const previous=new Map(keys.map(key=>[key,node.style.getPropertyValue(cssName(key))]));
     let frame=0,done=false,resolve:()=>void;
     const finished=new Promise<void>(r=>resolve=r),start=performance.now();
-    const clean=()=>{if(done)return;done=true;cancelMotionFrame(frame);for(const [key,value] of previous)node.style.setProperty(key,value);resolve();};
+    const clean=()=>{if(done)return;done=true;cancelMotionFrame(frame);for(const [key,value] of previous)node.style.setProperty(cssName(key),value);resolve();};
     function draw(now:number){
         let progress=Math.max(0,Math.min(1,(now-start)/duration));
         if(easing!=='linear')progress=1-Math.pow(1-progress,3);
         let right=frames.findIndex((key,i)=>Number(key.offset??i/(frames.length-1))>=progress);if(right<1)right=1;
         const a=frames[right-1],b=frames[right],lo=Number(a.offset??(right-1)/(frames.length-1)),hi=Number(b.offset??right/(frames.length-1));
         const mix=Math.max(0,Math.min(1,(progress-lo)/(hi-lo||1)));
-        for(const key of keys)node.style.setProperty(key,interpolate(a[key as keyof Keyframe],b[key as keyof Keyframe],mix));
+        for(const key of keys)node.style.setProperty(cssName(key),interpolate(a[key as keyof Keyframe],b[key as keyof Keyframe],mix));
         if(now-start>=duration)clean();else frame=requestMotionFrame(draw);
     }
     draw(start);return{cancel:clean,finished};

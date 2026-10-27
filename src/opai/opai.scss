@@ -1,7 +1,7 @@
-@font-face{font-family:'Google Sans';src:url('/opai/font/GoogleSans-Bold.ttf');font-weight:400;font-style:normal;font-display:swap} 
-@font-face{font-family:'Google Sans';src:url('/opai/font/GoogleSans-Bold.ttf');font-weight:700}
-@font-face{font-family:'Opai CJK';src:url('/opai/font/NotoSansSC-Bold.ttf');font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:'Opai CJK';src:url('/opai/font/NotoSansSC-Bold.ttf');font-weight:700;font-display:swap}
+@font-face{font-family:'Google Sans';src:url('/fonts/GoogleSans-Bold.ttf');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Google Sans';src:url('/fonts/GoogleSans-Bold.ttf');font-weight:700}
+@font-face{font-family:'Opai CJK';src:url('/fonts/NotoSansSC-Bold.ttf');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Opai CJK';src:url('/fonts/NotoSansSC-Bold.ttf');font-weight:700;font-display:swap}
 :root{
  --hud-shadow-color:#0007;--hud-shadow-blur:8px;
  --opai-hud-shadow:0 0 8px 4px var(--hud-shadow-color);

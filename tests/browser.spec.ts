@@ -458,7 +458,7 @@ test('CEF right button down works without contextmenu and duplicate contextmenu 
 });
 
 test('island retains Opai bold fonts, enlarged glyph and notice word order while the list uses regular fonts',async({page})=>{
-    const api=await setup(page);const fonts:string[]=[];page.on('request',r=>{if(r.url().includes('/opai/font/'))fonts.push(r.url());});
+    const api=await setup(page);const fonts:string[]=[];page.on('request',r=>{if(r.url().includes('/fonts/'))fonts.push(r.url());});
     await page.goto('/#/hud?static&preview');await page.evaluate(()=>document.fonts.ready);
     await expect(page.locator('.island .opai-icon').first()).toHaveCSS('width','12px');
     api.emit('moduleToggle',{moduleName:'KillAura',enabled:false});

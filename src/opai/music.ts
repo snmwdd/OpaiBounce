@@ -33,7 +33,7 @@ async function discover(){
         if(value?.protocol!==1||!/^http:\/\/127\.0\.0\.1:\d+$/.test(value.url)||typeof value.token!=='string'||value.token.length<24)throw new Error('missing');
         if(typeof value.version==='string'&&/^1\.[01]\./.test(value.version))throw new Error('音乐服务仍为旧版。请完整替换主题的 music 文件夹，然后完全退出并重新启动游戏；只重载主题无法更新 Java 音乐服务。');
         musicBridgeError.set('');endpoint={url:value.url,token:value.token};return endpoint;
-    }catch(error){endpoint=null;musicConnection.set('missing');throw new Error(error instanceof Error&&error.message.startsWith('音乐服务仍')?error.message:'音乐桥接尚未启动。请确认 OpaiBounceScript.js 1.4.2 和完整主题已安装，然后完全退出并重新启动游戏。');}
+    }catch(error){endpoint=null;musicConnection.set('missing');throw new Error(error instanceof Error&&error.message.startsWith('音乐服务仍')?error.message:'音乐桥接尚未启动。请确认 OpaiBounceScript.js 1.5.0 和完整主题已安装，然后完全退出并重新启动游戏。');}
 }
 export async function musicRequest<T=MusicState>(path:string,body?:unknown):Promise<T>{
     const host=endpoint??await discover();const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),path==='/state'||path==='/spectrum'?3000:35000);
