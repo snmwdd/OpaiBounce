@@ -1,8 +1,12 @@
 # OpaiBounce
 
-# 请必须装备此脚本才能正常运行
+# 请必须装备脚本才能正常运行
+https://github.com/snmwdd/OpaiBounce/tree/main/script
 
 
+![1](images/大概.png)
+
+# [更多图片](https://github.com/snmwdd/OpaiBounce/tree/main/images.md)
 
 ## 环境
 
