@@ -6,8 +6,8 @@ OpaiBounce is still in early development. Security fixes are generally provided 
 
 | Component | Version | Supported |
 | --- | --- | --- |
-| OpaiBounce Theme | 0.1.x | ✅ |
-| OpaiBounce Script | 1.5.x | ✅ |
+| OpaiBounce Theme | 1.1.x | ✅ |
+| OpaiBounce Script | 1.9.x | ✅ |
 | Older versions | All | ❌ |
 
 Support may change as new versions are released.

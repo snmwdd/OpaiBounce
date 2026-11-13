@@ -20,16 +20,41 @@
     $: choices=type==='CHOICE' ? Object.keys(setting.choices??{}) : setting.choices ?? [];
     $: low=Number(setting.range?.from ?? setting.range?.min ?? 0);
     $: high=Number(setting.range?.to ?? setting.range?.max ?? 1);
+    $: rangeMin = range ? Math.min(low, setting.value.from, setting.value.to) : low;
+    $: rangeMax = range ? Math.max(high, setting.value.from, setting.value.to) : high;
     $: step=type.startsWith('INT') ? 1 : (high-low>100 ? .1 : high-low<=1 ? .001 : .01);
     function label(value:unknown){const s=String(value ?? '');return $spaceSeperatedNames?s.replace(/([a-z0-9])([A-Z])/g,'$1 $2'):s;}
     function changed(){setting={...setting};dispatch('change');}
     function set(value:any){setting={...setting,value};dispatch('change');}
     function scalar(event:Event,commit:boolean){setting={...setting,value:Number((event.target as HTMLInputElement).value)};if(commit)dispatch('change');}
-    function rangeValue(event:Event,key:'from'|'to',commit:boolean){
-        const value=Number((event.target as HTMLInputElement).value);
-        const current={...setting.value,[key]:value};
-        if(current.from>current.to)current[key==='from'?'to':'from']=value;
-        setting={...setting,value:current};if(commit)dispatch('change');
+    function rangeValue(event: Event, key: 'from' | 'to', commit: boolean) {
+        const input = event.currentTarget as HTMLInputElement;
+        const requested = input.valueAsNumber;
+        if (!Number.isFinite(requested)) {
+            input.value = String(setting.value[key]);
+            return;
+        }
+        const number = type === 'INT_RANGE' ? Math.round(requested) : requested;
+        const value = Math.min(rangeMax, Math.max(rangeMin, number));
+        const current = {...setting.value, [key]: value};
+        if (current.from > current.to) current[key === 'from' ? 'to' : 'from'] = value;
+        input.value = String(value);
+        if (input.type === 'number' && current.from === setting.value.from && current.to === setting.value.to) return;
+        setting = {...setting, value: current};
+        if (commit) dispatch('change');
+    }
+
+    function rangeKey(event: KeyboardEvent, endpoint: 'from' | 'to') {
+        const input = event.currentTarget as HTMLInputElement;
+        if (event.key === 'Enter' && !event.isComposing) {
+            event.preventDefault();
+            input.blur();
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            input.value = String(setting.value[endpoint]);
+            input.blur();
+        }
     }
     async function toggle(){
         expanded=!expanded;
@@ -62,9 +87,26 @@
     {:else if numeric}
         <div class="number"><div class="number-label"><label class="setting-label" title={label(setting.name)} for={`${path}.${setting.name}`}>{label(setting.name)}</label><input class="number-value" aria-label="{label(setting.name)} value" type="number" value={setting.value} {step} on:change={e=>scalar(e,true)}/>{#if setting.suffix}<span>{setting.suffix}</span>{/if}</div><input id={`${path}.${setting.name}`} class="slider" type="range" min={Math.min(low,setting.value)} max={Math.max(high,setting.value)} {step} value={setting.value} style:--fill="{Math.max(0,Math.min(100,(setting.value-low)/(high-low)*100))}%" on:input={e=>scalar(e,false)} on:change={e=>scalar(e,true)}/></div>
     {:else if range}
-        <div class="number-label"><span class="setting-label" title={label(setting.name)}>{label(setting.name)}</span><span class="range-values">{setting.value.from} – {setting.value.to}</span></div>{#each ['from','to'] as axis}<input aria-label="{label(setting.name)} {axis}" class="slider" type="range" min={low} max={high} {step} value={setting.value[axis]} on:input={e=>rangeValue(e,axis as 'from'|'to',false)} on:change={e=>rangeValue(e,axis as 'from'|'to',true)}/>{/each}
+        <div class="number-label">
+            <span class="setting-label" title={label(setting.name)}>{label(setting.name)}</span>
+            <div class="range-values">
+                <input class="number-value" aria-label="{label(setting.name)} minimum value" type="number"
+                       inputmode={type === 'INT_RANGE' ? 'numeric' : 'decimal'} step={type === 'INT_RANGE' ? 1 : 'any'} value={setting.value.from}
+                       on:change={event => rangeValue(event, 'from', true)} on:keydown={event => rangeKey(event, 'from')}/>
+                <span aria-hidden="true">–</span>
+                <input class="number-value" aria-label="{label(setting.name)} maximum value" type="number"
+                       inputmode={type === 'INT_RANGE' ? 'numeric' : 'decimal'} step={type === 'INT_RANGE' ? 1 : 'any'} value={setting.value.to}
+                       on:change={event => rangeValue(event, 'to', true)} on:keydown={event => rangeKey(event, 'to')}/>
+                {#if setting.suffix}<span>{setting.suffix}</span>{/if}
+            </div>
+        </div>
+        {#each ['from', 'to'] as axis}
+            <input aria-label="{label(setting.name)} {axis}" class="slider" type="range" min={rangeMin} max={rangeMax}
+                   {step} value={setting.value[axis]} on:input={event => rangeValue(event, axis as 'from'|'to', false)}
+                   on:change={event => rangeValue(event, axis as 'from'|'to', true)}/>
+        {/each}
     {:else if type==='CHOOSE'||type==='CHOICE'||type==='MULTI_CHOOSE'||type==='ITEM_LIST'||type==='REGISTRY_LIST'||type==='REGISTRY_MUTABLE_LIST'}
-        <div class="field-label" title={label(setting.name)}>{label(setting.name)}</div><button class="field choice-field" aria-expanded={expanded} on:click={toggle}><span>{type==='CHOICE'?label(setting.active):Array.isArray(setting.value)?setting.value.map(label).join(', '):label(setting.value)}</span></button>
+        <div class="field-label" title={label(setting.name)}>{label(setting.name)}</div><button class="field choice-field" aria-label={label(setting.name)} aria-expanded={expanded} on:click={toggle}><span>{type==='CHOICE'?label(setting.active):Array.isArray(setting.value)?setting.value.map(label).join(', '):label(setting.value)}</span></button>
         <Reveal visible={expanded}><div class="options choice-options">{#each type==='ITEM_LIST'?setting.items:setting.registry?entries:choices.map((value:string)=>({value,name:value})) as option}<button class="option" class:chosen={Array.isArray(setting.value)?setting.value.includes(option.value):(type==='CHOICE'?setting.active:setting.value)===option.value} on:click={()=>choose(option.value)}>{#if (Array.isArray(setting.value)?setting.value.includes(option.value):(type==='CHOICE'?setting.active:setting.value)===option.value)}<VectorIcon name="check" size={13}/>{/if}{#if option.icon}<img src={option.icon} alt="" width="16" height="16"/>{/if}<span>{label(option.name)}</span></button>{/each}</div></Reveal>
         {#if type==='CHOICE'&&children.length}<div class="nested">{#each children as child,i}<svelte:self path={`${path}.${setting.name}.${setting.active}`} bind:setting={setting.choices[setting.active].value[i]} on:change={changed}/>{/each}</div>{/if}
     {:else if group}
@@ -80,5 +122,5 @@
     {:else}<div class="field-label" title={label(setting.name)}>{label(setting.name)}</div><span>{String(setting.value)}</span>{/if}
 </div>
 <style>
-    .opai-setting{font:400 16.6px 'Google Sans','Opai CJK',sans-serif;color:#ede0de;min-width:0}.setting-label{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:26px}.boolean>span:first-child{flex:1}.range-values{flex:none;white-space:nowrap}.boolean{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:39.2px;cursor:pointer;gap:8px}.boolean input{position:absolute;opacity:0;width:52px;height:32px;right:0;margin:0;cursor:pointer}.box{position:relative;flex-shrink:0;width:52px;height:32px;border:2px solid #9e8d8b;border-radius:16px;background:#2e2625;color:var(--accent-color);pointer-events:none;transition:background-color 120ms,border-color 120ms}.knob{position:absolute;left:2px;top:2px;width:24px;height:24px;border-radius:12px;background:#cdb7b4;display:grid;place-items:center;transition:transform 120ms,background-color 120ms}.boolean input:checked+.box{border-color:var(--accent-color);background:var(--accent-color)}.boolean input:checked+.box .knob{transform:translateX(20px);background:#5f150f}.boolean input:active+.box .knob{width:30px}.boolean input:checked:active+.box .knob{transform:translateX(14px)}.boolean input:focus-visible+.box{outline:1px solid var(--accent-color);outline-offset:3px}.number{height:40px}.number-label{display:flex;align-items:center;gap:4px;height:26px;font-size:inherit}.number-label>:first-child{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.number-label>span:last-child{flex:none;white-space:nowrap}.number-value{flex:none;width:58px;text-align:right;color:inherit;font:inherit;background:none;border:0;appearance:textfield;min-width:0}.number-value::-webkit-inner-spin-button{appearance:none}.slider{appearance:none;display:block;width:100%;height:5px;border:0;border-radius:4px;background:linear-gradient(to right,var(--accent-color) var(--fill,0%),#56413e var(--fill,0%));margin:3px 0 10px;cursor:pointer}.slider::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent-color);border:0}.field-label{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:32px;min-height:32px}.field{display:flex;align-items:center;justify-content:space-between;width:100%;min-width:0;height:42px;padding:0 12px;background:#2e2625;border:0;border-bottom:2px solid #cdb7b4;border-radius:4px 4px 0 0;color:inherit;font:inherit;text-align:left;margin-bottom:6px;cursor:pointer}.field>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.field[aria-expanded=true],.field:focus{border-bottom-color:var(--accent-color)}.chevron{display:block;transform:rotate(-90deg);transition:transform 160ms ease}.chevron.expanded{transform:rotate(90deg)}.options{max-height:240px;overflow:auto;background:#2e2625;border-radius:0 0 4px 4px;margin-top:-6px;margin-bottom:6px}.option{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-height:40px;color:inherit;background:none;font:inherit;text-align:left;border:0;padding:6px 12px;cursor:pointer}.option.chosen{background:#483a37;color:inherit}.choice-field,.choice-options{width:calc(100% + 8px);margin-left:-4px}.option:hover{background:#483a3780}.nested{padding-left:0}.group-head{display:flex;align-items:center;min-height:39.2px}.group-head>label,.group-head>span{flex:1;min-width:0}.group-head .boolean{margin-right:8px}.group-expand{display:grid;place-items:center;flex:none;width:24px;align-self:stretch;border:0;background:none;color:#cdb7b4;cursor:pointer}.bind{border-bottom-width:1px;height:39.2px;background:#2e2625}.actions{display:flex;margin-top:0}.actions button{font:inherit;flex:1;padding:6px;border:0;color:inherit;background:transparent;cursor:pointer}.actions button.chosen{color:var(--accent-color)}.vector{display:flex;gap:5px}.vector label{min-width:0;flex:1}.vector input{width:100%;background:#2e2625;border:0;border-bottom:1px solid #cdb7b4;color:inherit;font:inherit;padding:5px}.curve{width:100%;height:120px;background:#2e2625;touch-action:none;overflow:visible}.curve circle{cursor:grab}.list-add{display:flex;gap:4px}.list-add .field{min-width:0}.list-add button{background:#483a37;color:var(--accent-color);border:0;border-radius:4px;padding:8px;align-self:stretch;margin-bottom:6px}
+    .opai-setting{font:400 16.6px 'Google Sans','Opai CJK',sans-serif;color:#ede0de;min-width:0}.setting-label{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:26px}.boolean>span:first-child{flex:1}.range-values{display:flex;align-items:center;gap:4px;flex:none;white-space:nowrap}.range-values .number-value{width:4ch;min-width:2.5ch;padding:0}.range-values .number-value:focus{width:6ch}.boolean{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:39.2px;cursor:pointer;gap:8px}.boolean input{position:absolute;opacity:0;width:52px;height:32px;right:0;margin:0;cursor:pointer}.box{position:relative;flex-shrink:0;width:52px;height:32px;border:2px solid #9e8d8b;border-radius:16px;background:#2e2625;color:var(--accent-color);pointer-events:none;transition:background-color 120ms,border-color 120ms}.knob{position:absolute;left:2px;top:2px;width:24px;height:24px;border-radius:12px;background:#cdb7b4;display:grid;place-items:center;transition:transform 120ms,background-color 120ms}.boolean input:checked+.box{border-color:var(--accent-color);background:var(--accent-color)}.boolean input:checked+.box .knob{transform:translateX(20px);background:#5f150f}.boolean input:active+.box .knob{width:30px}.boolean input:checked:active+.box .knob{transform:translateX(14px)}.boolean input:focus-visible+.box{outline:1px solid var(--accent-color);outline-offset:3px}.number{height:40px}.number-label{display:flex;align-items:center;gap:4px;height:26px;font-size:inherit}.number-label>:first-child{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.number-label>span:last-child{flex:none;white-space:nowrap}.number-value{flex:none;width:58px;text-align:right;color:inherit;font:inherit;background:none;border:0;appearance:textfield;min-width:0}.number-value::-webkit-inner-spin-button{appearance:none}.slider{appearance:none;display:block;width:100%;height:5px;border:0;border-radius:4px;background:linear-gradient(to right,var(--accent-color) var(--fill,0%),#56413e var(--fill,0%));margin:3px 0 10px;cursor:pointer}.slider::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent-color);border:0}.field-label{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:32px;min-height:32px}.field{display:flex;align-items:center;justify-content:space-between;width:100%;min-width:0;height:42px;padding:0 12px;background:#2e2625;border:0;border-bottom:2px solid #cdb7b4;border-radius:4px 4px 0 0;color:inherit;font:inherit;text-align:left;margin-bottom:6px;cursor:pointer}.field>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.field[aria-expanded=true],.field:focus{border-bottom-color:var(--accent-color)}.chevron{display:block;transform:rotate(-90deg);transition:transform 160ms ease}.chevron.expanded{transform:rotate(90deg)}.options{max-height:240px;overflow:auto;background:#2e2625;border-radius:0 0 4px 4px;margin-top:-6px;margin-bottom:6px}.option{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-height:40px;color:inherit;background:none;font:inherit;text-align:left;border:0;padding:6px 12px;cursor:pointer}.option.chosen{background:#483a37;color:inherit}.choice-field,.choice-options{width:calc(100% + 8px);margin-left:-4px}.option:hover{background:#483a3780}.nested{padding-left:0}.group-head{display:flex;align-items:center;min-height:39.2px}.group-head>label,.group-head>span{flex:1;min-width:0}.group-head .boolean{margin-right:8px}.group-expand{display:grid;place-items:center;flex:none;width:24px;align-self:stretch;border:0;background:none;color:#cdb7b4;cursor:pointer}.bind{border-bottom-width:1px;height:39.2px;background:#2e2625}.actions{display:flex;margin-top:0}.actions button{font:inherit;flex:1;padding:6px;border:0;color:inherit;background:transparent;cursor:pointer}.actions button.chosen{color:var(--accent-color)}.vector{display:flex;gap:5px}.vector label{min-width:0;flex:1}.vector input{width:100%;background:#2e2625;border:0;border-bottom:1px solid #cdb7b4;color:inherit;font:inherit;padding:5px}.curve{width:100%;height:120px;background:#2e2625;touch-action:none;overflow:visible}.curve circle{cursor:grab}.list-add{display:flex;gap:4px}.list-add .field{min-width:0}.list-add button{background:#483a37;color:var(--accent-color);border:0;border-radius:4px;padding:8px;align-self:stretch;margin-bottom:6px}
 </style>

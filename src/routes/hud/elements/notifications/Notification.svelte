@@ -21,6 +21,8 @@
     background: var(--notification-background-color);
     border-radius: 5px;
     width: 300px;
+    grid-template-rows: max-content max-content;
+    align-content: center;
     overflow: hidden;
     padding: 10px;
     margin-bottom: 10px;
@@ -33,6 +35,7 @@
     background-repeat: no-repeat;
     border-radius: 4px;
     grid-area: a;
+    align-self: center;
     transition: background-color 0.2s;
     position: relative;
     background-image: url("/img/hud/notification/icon-toggle.svg");
@@ -68,7 +71,7 @@
     }
 
     &.enabled {
-      background-color: var(--notification-success-color);
+      background-color: var(--accent-color);
 
       &::after {
         left: 62%;
@@ -89,11 +92,15 @@
     font-size: 14px;
     color: var(--notification-title-color);
     font-weight: 600;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .message {
     grid-area: c;
     font-size: 12px;
     color: var(--notification-message-color);
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 </style>

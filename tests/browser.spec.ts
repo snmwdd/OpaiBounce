@@ -489,14 +489,19 @@ test('settings remain usable when a CEF host pauses animation frames',async({pag
 });
 
 test('Scaffold island uses live counts, an observed maximum and clears on disable',async({page})=>{
-    const api=await setup(page);await page.goto('/#/hud?static&preview');await expect(page.locator('.island')).toBeVisible();
+    const shared:Record<string,string>={};
+    const setRate=(scaffoldBps:number)=>shared['opai.bridge.snapshot']=JSON.stringify({protocol:1,version:'1.7.0',at:Date.now(),connected:true,inWorld:true,scaffoldBps,capabilities:{preview:true,serverInfo:true,nametags:true}});
+    const api=await setup(page,false,shared);await page.goto('/#/hud?static&preview');await expect(page.locator('.island')).toBeVisible();
     api.emit('moduleToggle',{moduleName:'Scaffold',enabled:true});api.emit('blockCountChange',{count:128,nextBlock:'minecraft:stone'});
     const scaffold=page.locator('.scaffold-content');await expect(scaffold).not.toHaveClass(/content-hidden/);
-    await expect(scaffold).toContainText('128 blocks left - 0.0 block/s');expect((await scaffold.boundingBox())!.width).toBeLessThan(400);
+    await expect(scaffold).toContainText('128 blocks left - — block/s');expect((await scaffold.boundingBox())!.width).toBeLessThan(400);
+    setRate(0);await expect(scaffold).toContainText('128 blocks left - 0.0 block/s');
     const bar=page.getByRole('progressbar',{name:'Remaining blocks'});await expect(bar).toHaveAttribute('aria-valuemax','128');
     api.emit('blockCountChange',{count:64});await expect(bar).toHaveAttribute('aria-valuenow','64');
     await expect.poll(()=>bar.locator('span').evaluate(el=>getComputedStyle(el).transform)).toBe('matrix(0.5, 0, 0, 1, 0, 0)');
-    await expect(scaffold).not.toContainText('0.0 block/s');await page.waitForTimeout(2200);await expect(scaffold).toContainText('0.0 block/s');
+    await expect(scaffold).toContainText('64 blocks left - 0.0 block/s');
+    setRate(3.5);await expect(scaffold).toContainText('64 blocks left - 3.5 block/s');
+    setRate(0);await expect(scaffold).toContainText('64 blocks left - 0.0 block/s');
     api.emit('blockCountChange',{count:192});await expect(bar).toHaveAttribute('aria-valuemax','192');
     await expect(bar.locator('span')).toHaveCSS('transform','matrix(1, 0, 0, 1, 0, 0)');await page.screenshot({path:'reports/scaffold-island.png'});
     api.emit('moduleToggle',{moduleName:'Scaffold',enabled:false});await expect(scaffold).toHaveClass(/content-hidden/);
@@ -587,10 +592,19 @@ test('module descriptions follow the right side of the mouse and clamp within th
     await page.screenshot({path:'reports/module-tooltip.png'});expect(api.errors).toEqual([]);
 });
 
-test('block consumption excludes pickups, expires after two seconds and resets its maximum',()=>{
-    const blocks=new BlockStats();blocks.update(64,0);blocks.update(60,1000);expect(blocks.rate(1000)).toBe(4);expect(blocks.progress).toBe(.9375);
-    blocks.update(128,1500);expect(blocks.maximum).toBe(128);expect(blocks.rate(1500)).toBeCloseTo(4/1.5);expect(blocks.rate(3100)).toBe(0);
-    blocks.reset();blocks.update(0,4000);expect(blocks.progress).toBe(0);expect(blocks.maximum).toBe(0);blocks.update(32,4100);expect(blocks.maximum).toBe(32);
+test('remaining blocks track their observed maximum until reset',()=>{
+    const blocks=new BlockStats();
+    blocks.update(64);
+    blocks.update(60);
+    expect(blocks.progress).toBe(.9375);
+    blocks.update(128);
+    expect(blocks.maximum).toBe(128);
+    blocks.reset();
+    expect(blocks.count).toBeNull();
+    expect(blocks.progress).toBe(0);
+    expect(blocks.maximum).toBe(0);
+    blocks.update(32);
+    expect(blocks.maximum).toBe(32);
 });
 
 test('invalid profile enabled flags are rejected before any module write',async({page})=>{
@@ -729,14 +743,14 @@ test('loader assembles its center and original parts before the final logo depar
 });
 
 test('LiquidScript bridge shows live server address and ping and drops expired telemetry',async({page})=>{
-    const shared:Record<string,string>={};const snapshot=()=>JSON.stringify({protocol:1,version:'1.0.0',at:Date.now(),connected:true,inWorld:true,serverAddress:'play.example.org:25565',ping:37,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]});shared['opai.bridge.snapshot']=snapshot();
+    const shared:Record<string,string>={};const snapshot=()=>JSON.stringify({protocol:1,version:'1.0.0',at:Date.now(),connected:true,inWorld:true,serverAddress:'play.example.org:25565',pingSource:'icmp',ping:37,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]});shared['opai.bridge.snapshot']=snapshot();
     const api=await setup(page,false,shared);await page.goto('/#/hud?static&preview');await expect(page.locator('.island .connection')).toHaveText('play.example.org:25565');await expect(page.locator('.island .ping')).toHaveText('37 ms');
     await page.evaluate(()=>{(window as any).__bridge= (window as any).OpaiTheme.getState();});expect(await page.evaluate(()=>(window as any).__bridge.capabilities.nametags)).toBe(true);
     shared['opai.bridge.snapshot']=JSON.stringify({...JSON.parse(snapshot()),at:Date.now()-10000});await expect(page.locator('.island .ping')).toHaveCount(0);await expect(page.locator('.island .connection')).not.toHaveText('play.example.org:25565');expect(api.errors).toEqual([]);
 });
 
 test('ESP settings open a leased native preview and theme API feature writes stay isolated',async({page})=>{
-    const shared:Record<string,string>={'opai.bridge.snapshot':JSON.stringify({protocol:1,version:'1.0.0',at:Date.now(),connected:true,inWorld:true,serverAddress:null,ping:null,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]})};
+    const shared:Record<string,string>={'opai.bridge.snapshot':JSON.stringify({protocol:1,version:'1.0.0',at:Date.now(),connected:true,inWorld:true,serverAddress:null,pingSource:'icmp',ping:null,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]})};
     const api=await setup(page,false,shared);await page.goto('/#/clickgui?static&preview');await expect.poll(()=>page.evaluate(()=>(window as any).OpaiTheme?.getState()?.capabilities.preview)).toBe(true);
     const row=page.locator('.module .name').filter({hasText:/^Player ESP$/});await row.click({button:'right'});const card=page.getByLabel('Entity render preview');await expect(card).toBeVisible();
     await expect.poll(()=>JSON.parse(shared['opai.bridge.preview']??'{}').module).toBe('PlayerESP');const request=JSON.parse(shared['opai.bridge.preview']);expect(request.rect.width).toBeGreaterThan(100);expect(request.rect.height).toBeGreaterThan(100);expect(request.at).toBeGreaterThan(Date.now()-2000);expect(request.viewport.width).toBe(2000);
@@ -751,7 +765,7 @@ test('LiquidScript data does not leak into the theme preference diff',async({pag
 
 test('native static ClickGUI publishes ESP preview, retires its lease on close and resumes on reopen',async({page})=>{
     const shared:Record<string,string>={};
-    const snapshot=()=>shared['opai.bridge.snapshot']=JSON.stringify({protocol:1,version:'1.1.0',at:Date.now(),connected:true,inWorld:true,serverAddress:'native.example.org',ping:48,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]});
+    const snapshot=()=>shared['opai.bridge.snapshot']=JSON.stringify({protocol:1,version:'1.1.0',at:Date.now(),connected:true,inWorld:true,serverAddress:'native.example.org',pingSource:'icmp',ping:48,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]});
     snapshot();const keep=setInterval(snapshot,500);
     try{
         const api=await setup(page,false,shared);await page.goto('/#/clickgui?static');const row=page.locator('.module .name').filter({hasText:/^Player ESP$/});await row.click({button:'right'});
@@ -779,9 +793,9 @@ test('Windows period panel retains focus and completes expansion and closing wit
     await expect(page.locator('.palette-island')).toHaveAttribute('data-motion-active','false');await page.keyboard.press('Escape');await expect(page.locator('.palette-island')).toHaveCount(0);await expect(page.locator('.island')).toBeVisible();expect(api.errors).toEqual([]);
 });
 
-test('island uses resolved IP fallback, preserves zero latency and clears data outside a world',async({page})=>{
-    const shared:Record<string,string>={};const state={protocol:1,version:'1.1.0',at:Date.now(),connected:true,inWorld:true,serverAddress:null,serverIP:'203.0.113.55',ping:0,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]};shared['opai.bridge.snapshot']=JSON.stringify(state);
-    const api=await setup(page,false,shared);await page.goto('/#/hud?static');await expect(page.locator('.island .connection')).toHaveText('203.0.113.55');await expect(page.locator('.island .ping')).toHaveText('0 ms');
+test('island uses resolved IP fallback, labels sub-millisecond latency and clears data outside a world',async({page})=>{
+    const shared:Record<string,string>={};const state={protocol:1,version:'1.1.0',at:Date.now(),connected:true,inWorld:true,serverAddress:null,serverIP:'203.0.113.55',pingSource:'icmp',ping:0.2,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]};shared['opai.bridge.snapshot']=JSON.stringify(state);
+    const api=await setup(page,false,shared);await page.goto('/#/hud?static');await expect(page.locator('.island .connection')).toHaveText('203.0.113.55');await expect(page.locator('.island .ping')).toHaveText('<1 ms');
     shared['opai.bridge.snapshot']=JSON.stringify({...state,at:Date.now(),serverIP:null,singleplayer:true,ping:null});await expect(page.locator('.island .connection')).toHaveText('singleplayer');await expect(page.locator('.island .ping')).toHaveCount(0);
     shared['opai.bridge.snapshot']=JSON.stringify({...state,at:Date.now(),inWorld:false});await expect(page.locator('.island .connection')).toHaveText('Minecraft');await expect(page.locator('.island .ping')).toHaveCount(0);expect(api.errors).toEqual([]);
 });
@@ -840,10 +854,11 @@ for(const [label,route] of [['Single player','singleplayer'],['Multi player','mu
 }
 
 test('latency precedes server address, changes color and preserves existing island scale',async({page})=>{
-    const shared:Record<string,string>={};const state={protocol:1,version:'1.1.1',at:Date.now(),connected:true,inWorld:true,serverAddress:'mc.hypixel.net',ping:378,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]};
+    const shared:Record<string,string>={};const state={protocol:1,version:'1.1.1',at:Date.now(),connected:true,inWorld:true,serverAddress:'mc.hypixel.net',pingSource:'icmp',ping:378,capabilities:{serverInfo:true,nametags:true,preview:true},errors:[]};
     const update=(ping:number)=>shared['opai.bridge.snapshot']=JSON.stringify({...state,at:Date.now(),ping});update(378);
-    const api=await setup(page,false,shared);await page.goto('/#/hud?static&preview');await expect(page.locator('.island .network')).toHaveText('378 msto'+'mc.hypixel.net');
+    const api=await setup(page,false,shared);await page.goto('/#/hud?static&preview');await expect(page.locator('.island .network')).toHaveText('378 ms to mc.hypixel.net');
     expect(await page.locator('.island .ping').evaluate(el=>!!(el.compareDocumentPosition(document.querySelector('.island .connection')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+    await expect(page.locator('.island .ping')).toHaveCSS('font-variant-numeric','proportional-nums');
     await expect(page.locator('.island .ping')).toHaveCSS('color','rgb(255, 154, 50)');await expect(page.locator('.island .latency')).toHaveCSS('gap','1px');await expect(page.locator('.island')).toHaveCSS('font-size','8px');await expect(page.locator('.island')).toHaveCSS('height','23px');await expect(page.locator('.island .opai-icon').first()).toHaveCSS('width','12px');
     update(20);await expect(page.locator('.island .ping')).toHaveText('20 ms');await expect(page.locator('.island .ping')).toHaveCSS('color','rgb(103, 241, 121)');
     update(900);await expect(page.locator('.island .ping')).toHaveCSS('color','rgb(255, 79, 89)');update(378);await expect(page.locator('.island .ping')).toHaveCSS('color','rgb(255, 154, 50)');

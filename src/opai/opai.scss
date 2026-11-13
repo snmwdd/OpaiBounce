@@ -3,11 +3,11 @@
 @font-face{font-family:'Opai CJK';src:url('/fonts/NotoSansSC-Bold.ttf');font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'Opai CJK';src:url('/fonts/NotoSansSC-Bold.ttf');font-weight:700;font-display:swap}
 :root{
- --hud-shadow-color:#0007;--hud-shadow-blur:8px;
+ --hud-shadow-color:#0007;--hud-shadow-blur:8px;--opai-backdrop-blur:blur(2px);--opai-album-blur:blur(10px);
  --opai-hud-shadow:0 0 8px 4px var(--hud-shadow-color);
  --opai-hud-silhouette-shadow:drop-shadow(0 0 4px var(--hud-shadow-color));
  --accent-color:#ffb4aa;--surface-color:#1a1413;--text-color:#ede0de;--text-dimmed-color:#cdb7b4;
- --opai-enabled:#df9d95;--opai-enabled-text:#5f150f;
+ --opai-enabled:color-mix(in srgb,var(--accent-color) 87.5%,#000);--opai-enabled-text:#211816;
  --clickgui-panel-header-background-color:#161110;--clickgui-panel-body-background-color:#1a1413b0;
  --clickgui-text-color:#ede0de;--clickgui-text-dimmed-color:#ede0de;
  --clickgui-module-hover-background-color:#ede0de0c;--clickgui-module-settings-background-color:transparent;
@@ -33,3 +33,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:1px solid 
 .tabbed-clickgui .settings .value{font-size:16.6px!important;font-family:'Google Sans',sans-serif!important;font-weight:400!important}
 
 .opai-ripple{contain:strict}
+
+:root[data-opai-shadows="off"]{--opai-hud-shadow:none;--opai-hud-silhouette-shadow:none;--hud-shadow-color:transparent}
+:root[data-opai-blur="off"]{--opai-backdrop-blur:none;--opai-album-blur:none}

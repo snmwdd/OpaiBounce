@@ -44,7 +44,7 @@
     async function refreshModules(){modules=await getModules();}
     onMount(()=>{
         let alive=true;
-        void (async()=>{try{await persistentDataLoaded;await refreshModules();if(!alive)return;profiles=readProfiles();const keys=await getMinecraftKeybinds();if(alive)gameKeys=keys.map(k=>k.key.translationKey);}catch(e){if(alive)message=String(e);}finally{if(alive)loading=false;}})();
+        void (async()=>{try{await persistentDataLoaded;await refreshModules();if(!alive)return;profiles=await readProfiles();const keys=await getMinecraftKeybinds();if(alive)gameKeys=keys.map(k=>k.key.translationKey);}catch(e){if(alive)message=String(e);}finally{if(alive)loading=false;}})();
         search?.focus();
         return()=>{alive=false;};
     });

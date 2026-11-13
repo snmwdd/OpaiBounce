@@ -3,6 +3,7 @@ import type { PersistentStorageItem } from "./types";
 
 let loadedOnce = false;
 const baseline=new Map<string,string>();
+const explicitSave = (key: string) => key === 'opai.profiles' || key === 'opai.preferences';
 const transient=(key:string)=>key.startsWith('opai.palette.')||key.startsWith('opai.bridge.');
 let persistentDataUpdateTimeout: null | ReturnType<typeof setTimeout> = null;
 
@@ -50,11 +51,11 @@ export async function flushPersistentData():Promise<boolean> {
     if(!loadedOnce)return false;
     const writes:Promise<void>[]=[];
     for(let i=0;i<localStorage.length;i++){
-        const key=localStorage.key(i)!;if(transient(key))continue;
+        const key=localStorage.key(i)!;if(transient(key)||explicitSave(key))continue;
         const value=localStorage.getItem(key)!;
         if(baseline.get(key)!==value)writes.push(putPersistentStorageItem(key,value).then(()=>{baseline.set(key,value);}));
     }
-    for(const key of baseline.keys())if(localStorage.getItem(key)===null)writes.push(deletePersistentStorageItem(key).then(()=>{baseline.delete(key);}));
+    for(const key of baseline.keys())if(!explicitSave(key)&&localStorage.getItem(key)===null)writes.push(deletePersistentStorageItem(key).then(()=>{baseline.delete(key);}));
     // Do not replace /all: another native WebView may have newer preferences or an active input handoff.
     await Promise.all(writes);
     return true;
@@ -64,5 +65,6 @@ export async function flushPersistentData():Promise<boolean> {
 // baseline in sync so later preference writes cannot replay an older value.
 export async function savePersistentItem(key:string,value:string):Promise<void>{
     await putPersistentStorageItem(key,value);
-    localStorage.setItem(key,value);baseline.set(key,value);
+    baseline.set(key,value);
+    try { localStorage.setItem(key,value); } catch { /* The native store is authoritative. */ }
 }

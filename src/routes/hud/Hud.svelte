@@ -147,7 +147,8 @@
   .hud{position:fixed;inset:0}
   .hud-plane{position:absolute;left:0;top:0;transform-origin:top left}
   .hud-save-error{position:fixed;left:12px;bottom:12px;padding:8px 12px;background:#171312ee;border-radius:6px;color:var(--accent-color);font-size:13px;z-index:10001}
-  .opai-hud-element { zoom: 2; --opai-hud-shadow:0 0 4px 2px var(--hud-shadow-color); --opai-hud-silhouette-shadow:drop-shadow(0 0 2px var(--hud-shadow-color)); }
+  .opai-hud-element { zoom: 2; }
+  :global(html:not([data-opai-shadows="off"])) .opai-hud-element { --opai-hud-shadow:0 0 4px 2px var(--hud-shadow-color); --opai-hud-silhouette-shadow:drop-shadow(0 0 2px var(--hud-shadow-color)); }
   .hud {
     height: 100vh;
     width: 100vw;

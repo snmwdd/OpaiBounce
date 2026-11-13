@@ -29,6 +29,7 @@
     import {setMotionPlatform} from './opai/motionPlatform';
     import MusicPanel from './opai/MusicPanel.svelte';
     import {musicOpen,installMusicMonitor} from './opai/music';
+    import {installOpaiPreferences, refreshOpaiPreferences} from './opai/preferences';
     import Errors from "./opai/Errors.svelte";
     const menuRoutes = {
         "/title": Title,
@@ -83,17 +84,23 @@
     }
 
     function applyAccentColor(color: number) {
+        if (!Number.isFinite(color)) return;
         setThemeColor("accent-color", themeColorToHex(color));
+        const [red, green, blue] = intToRgba(color);
+        const luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) * 0.875;
+        setThemeColor("opai-enabled-text", luminance > 132 ? "#211816" : "#ffffff");
     }
 
     function applyTintColor(defaultSurfaceColor: string, color: number) {
+        if (!Number.isFinite(color)) return;
         setThemeColor("surface-color", mixColors(defaultSurfaceColor, themeColorToHex(color), SURFACE_TINT_MIX));
     }
 
     onMount(() => {
         let alive = true;
         const stopMusicMonitor=installMusicMonitor();
-        const remove: (() => void)[] = [];
+        const remove: (() => void)[] = [installOpaiPreferences()];
+        let accentRevision = 0, tintRevision = 0;
         let paletteOpening=false,screenRevision=0;
         async function showPalette(){
             if($location!=='/hud'||paletteOpening)return;
@@ -114,21 +121,24 @@
             if(alive&&revision===screenRevision){if(screen.name!=='clickgui')void cancelPalette().catch(()=>{});await changeRoute(screen.name || "none");}
         }
         async function appearance() {
+            const accent = accentRevision, tint = tintRevision;
             const metadata = await getMetadata();
             const theme = await getTheme(metadata.id);
             if(!alive)return;
-            applyAccentColor(theme.colors.accent);
-            applyTintColor(metadata.colors.Tint,theme.colors.tint);
+            if (accent === accentRevision) applyAccentColor(theme.colors.accent);
+            if (tint === tintRevision) applyTintColor(metadata.colors.Tint,theme.colors.tint);
         }
         remove.push(listenAlways("themeColorChange", (event: ThemeColorChangeEvent) => {
             if (event.themeId !== 'opai') return;
-            if(event.name==='Accent')applyAccentColor(event.value);
-            if(event.name==='Tint')applyTintColor('#1a1413',event.value);
+            const name = event.name.toLowerCase();
+            if (name === 'accent') { accentRevision++; applyAccentColor(event.value); }
+            if (name === 'tint') { tintRevision++; applyTintColor('#1a1413', event.value); }
         }));
         if(!isStatic) {
             remove.push(listenAlways("socketReady", () => {
                 void syncScreen().catch(()=>{});
                 void appearance().catch(()=>{});
+                void refreshOpaiPreferences(true).catch(() => {});
             }));
             remove.push(listenAlways("virtualScreen", async (event: any) => {
             console.log(`[Router] Virtual screen change to ${event.screenName}`);
@@ -141,6 +151,8 @@
                     await changeRoute("none");
                     break;
                 case "open":
+                    void appearance().catch(() => {});
+                    void refreshOpaiPreferences(true).catch(() => {});
                     await changeRoute(event.screenName || "none");
                     break;
             }

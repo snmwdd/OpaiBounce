@@ -78,7 +78,25 @@ export async function getModule(name: string): Promise<Module> {
     return data;
 }
 
+const settingWrites = new Map<string, Promise<void>>();
+
+function queueSettingWrite(key: string, url: string, body: string): Promise<void> {
+    const pending = settingWrites.get(key);
+    const write = (pending?.catch(() => {}) ?? Promise.resolve()).then(async () => {
+        await fetch(url, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body,
+        });
+    });
+    settingWrites.set(key, write);
+    return write.finally(() => {
+        if (settingWrites.get(key) === write) settingWrites.delete(key);
+    });
+}
+
 export async function getModuleSettings(name: string): Promise<ConfigurableSetting> {
+    await settingWrites.get("module:" + name)?.catch(() => {});
     const searchParams = new URLSearchParams({name});
 
     const response = await fetch(`${API_BASE}/client/modules/settings?${searchParams.toString()}`);
@@ -87,16 +105,9 @@ export async function getModuleSettings(name: string): Promise<ConfigurableSetti
     return data;
 }
 
-export async function setModuleSettings(name: string, settings: ConfigurableSetting) {
+export function setModuleSettings(name: string, settings: ConfigurableSetting): Promise<void> {
     const searchParams = new URLSearchParams({name});
-
-    await fetch(`${API_BASE}/client/modules/settings?${searchParams.toString()}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(settings)
-    });
+    return queueSettingWrite("module:" + name, `${API_BASE}/client/modules/settings?${searchParams}`, JSON.stringify(settings));
 }
 
 export async function getSpooferSettings(): Promise<ConfigurableSetting> {
@@ -117,20 +128,15 @@ export async function setSpooferSettings(settings: ConfigurableSetting) {
 }
 
 export async function getGlobalSettings(): Promise<ConfigurableSetting> {
+    await settingWrites.get("global")?.catch(() => {});
     const response = await fetch(`${API_BASE}/client/global`);
     const data = await response.json();
 
     return data;
 }
 
-export async function setGlobalSettings(settings: ConfigurableSetting) {
-    await fetch(`${API_BASE}/client/global`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(settings)
-    });
+export function setGlobalSettings(settings: ConfigurableSetting): Promise<void> {
+    return queueSettingWrite("global", `${API_BASE}/client/global`, JSON.stringify(settings));
 }
 
 export async function setModuleEnabled(name: string, enabled: boolean) {

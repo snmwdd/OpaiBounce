@@ -12,6 +12,7 @@
     } from "../../integration/rest";
     import type {ConfigurableSetting} from "../../integration/types";
     import GenericSetting from "./setting/common/GenericSetting.svelte";
+    import {refreshOpaiPreferences} from '../../opai/preferences';
     import {previewModule} from '../../opai/scriptBridge';
     import {get} from 'svelte/store';
     import Reveal from "../../opai/Reveal.svelte";
@@ -81,7 +82,7 @@
     }
 
     async function updateModuleSettings() {
-        try { if(configurable){await setModuleSettings(name, configurable);if(get(previewModule)?.name===name)previewModule.set({name,anchor:moduleNameElement,settings:configurable});} } catch {}
+        try { if(configurable){await setModuleSettings(name, configurable);if(name==='HUD')void refreshOpaiPreferences(true).catch(()=>{});if(get(previewModule)?.name===name)previewModule.set({name,anchor:moduleNameElement,settings:configurable});} } catch {}
     }
 
     async function toggleModule() {

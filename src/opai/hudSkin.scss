@@ -19,7 +19,7 @@
 .hud .contained-element .closed-caption-entry{background:var(--opai-hud-surface)!important;padding:6px 12px;border-radius:12px;font-size:18px;line-height:24px}
 .hud .contained-element .closed-caption-entry .arrow{color:var(--accent-color)}
 .hud .contained-element .notification{background:var(--opai-hud-surface);border-radius:14px;padding:12px;gap:0 12px;width:340px;margin-bottom:8px}
-.hud .contained-element .notification .icon{width:42px;height:42px;border-radius:10px;background-size:28px}
+.hud .contained-element .notification .icon{width:42px;height:42px;border-radius:10px;background-size:28px 28px}
 .hud .contained-element .notification .title{font-size:18px;color:var(--opai-hud-text);line-height:24px;font-weight:400}
 .hud .contained-element .notification .message{font-size:16px;color:var(--opai-hud-muted);line-height:22px}
 .hud .contained-element .tabgui .categories,.hud .contained-element .tabgui .modules{border-radius:14px;overflow:hidden;background:var(--opai-hud-surface)}

@@ -6,7 +6,7 @@ import type {SpaceSeperatedNamesChangeEvent} from "../integration/events";
 
 export let spaceSeperatedNames = writable(false);
 
-const regex = /[A-Z]?[a-z]+|[A-Z]+[0-9]+|[0-9]+|[A-Z]+(?![a-z])/g;
+const regex = /[A-Z]?[a-z]+(?:-[a-z]+)*|[A-Z]+[0-9]+|[0-9]+|[A-Z]+(?![a-z])/g;
 
 /**
  * Handles space seperated names if enabled.

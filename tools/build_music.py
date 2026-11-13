@@ -60,7 +60,7 @@ def build(gson=None, tests=False):
         test_classes.mkdir(parents=True)
         classpath = os.pathsep.join([str(classes), str(gson)])
         subprocess.run(['javac', '--release', '21', '-encoding', 'UTF-8', '-cp', classpath, '-d', str(test_classes), *map(str, sorted((MUSIC / 'tests').glob('*.java')))], check=True)
-        for name in ['MusicServiceTest', 'PcmSpectrumTest', 'DangoLyricsTest']:
+        for name in ['MusicServiceTest', 'PcmSpectrumTest', 'DangoLyricsTest', 'IcmpProbeTest']:
             subprocess.run(['java', '-cp', classpath + os.pathsep + str(test_classes), 'opai.music.' + name], cwd=MUSIC, check=True)
     print('Music service built from source (Java 21 bytecode).')
 

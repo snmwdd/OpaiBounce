@@ -14,6 +14,8 @@
     import {openingKeyframes} from "../../opai/motion";
     import EntityPreview from '../../opai/EntityPreview.svelte';
     import Configurations from "../../opai/Configurations.svelte";
+    import Search from "./Search.svelte";
+    import {opaiPreferences} from "../../opai/preferences";
     let element:HTMLDivElement;
     let animating=$state(false);
     let categories = $state<GroupedModules>({});
@@ -55,6 +57,7 @@
     <EntityPreview/>
     <Configurations/>
 </ScaledClickGuiContent>
+{#if $opaiPreferences.search}<Search {modules}/>{/if}
 
 <style lang="scss">
   .clickgui {

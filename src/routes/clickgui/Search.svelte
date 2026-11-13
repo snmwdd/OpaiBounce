@@ -1,302 +1,203 @@
 <script lang="ts">
-    import type {ConfigurableSetting, Module} from "../../integration/types";
-    import {getModuleSettings, setModuleEnabled} from "../../integration/rest";
-    import {listen} from "../../integration/ws";
-    import type {ClickGuiValueChangeEvent, KeyboardKeyEvent, ModuleToggleEvent} from "../../integration/events";
-    import {highlightModuleName} from "./clickgui_store";
-    import {onMount} from "svelte";
-    import {convertToSpacedString, spaceSeperatedNames} from "../../theme/theme_config";
-    import {isClickGuiScreen} from "../../util/utils";
+    import {onDestroy, tick} from 'svelte';
+    import type {Module} from '../../integration/types';
+    import {convertToSpacedString} from '../../theme/theme_config';
+    import {clickGuiVisible} from '../../opai/clickGuiLifecycle';
+    import {hudGeometry} from '../../opai/hudGeometry';
+    import Reveal from '../../opai/Reveal.svelte';
+    import VectorIcon from '../../opai/VectorIcon.svelte';
+    import {highlightModuleName} from './clickgui_store';
 
     export let modules: Module[];
 
-    let resultElements: HTMLElement[] = [];
-    let searchContainerElement: HTMLElement;
-    let autoFocus: boolean = true
-    let searchInputElement: HTMLElement;
-    let query: string;
-    let filteredModules: Module[] = [];
-    let selectedIndex = 0;
-    let hasFocus = false;
+    let dock: HTMLElement;
+    let trigger: HTMLButtonElement;
+    let input: HTMLInputElement;
+    let expanded = false;
+    let query = '';
+    let selected = 0;
+    const id = 'opai-clickgui-module-results';
 
-    type SearchableModule = {
-        raw: Module;
-        lowerName: string;
-        lowerAliases: string[];
-    };
+    function normalize(text: string) {
+        return text.toLowerCase().replace(/\s+/g, '');
+    }
 
-    // Cache lowercase names/aliases to avoid repeated toLowerCase() per keystroke.
-    let searchableModules: SearchableModule[] = [];
-    $: searchableModules = modules.map(m => ({
-        raw: m,
-        lowerName: m.name.toLowerCase(),
-        lowerAliases: m.aliases.map(a => a.toLowerCase()),
+    $: scale = $hudGeometry.gameScale * $hudGeometry.density;
+    $: indexed = modules.map(module => ({
+        module,
+        terms: [module.name, ...module.aliases].map(normalize),
     }));
+    $: term = normalize(query);
+    $: results = term
+        ? indexed.filter(item => item.terms.some(text => text.includes(term))).map(item => item.module)
+        : [];
+    $: if (!$clickGuiVisible && expanded) close();
+    $: if (selected >= results.length) selected = 0;
 
-    function reset() {
-        filteredModules = [];
-        query = "";
-        $highlightModuleName = null;
+    async function open() {
+        expanded = true;
+        await tick();
+        input?.focus({preventScroll: true});
     }
 
-    function filterModules(resetIndex: boolean) {
-        if (!query) {
-            reset();
-            return;
-        }
-
-        if (resetIndex) {
-            selectedIndex = 0;
-        }
-
-        const pureQuery = query.toLowerCase().replaceAll(" ", "");
-
-        filteredModules = searchableModules.filter(({ raw, lowerName, lowerAliases }) => {
-            return lowerName.includes(pureQuery)
-                || lowerAliases.some(a => a.includes(pureQuery));
-        }).map(it => it.raw);
+    function close(returnFocus = false) {
+        input?.blur();
+        expanded = false;
+        selected = 0;
+        query = '';
+        if (returnFocus) void tick().then(() => trigger?.focus({preventScroll: true}));
     }
 
-    async function handleKeyDown(e: KeyboardKeyEvent) {
-        if (!isClickGuiScreen(e.screen)) {
-            return;
-        }
-
-        if (filteredModules.length === 0 || e.action === 0) {
-            return;
-        }
-
-        switch (e.key) {
-            case "key.keyboard.down":
-                selectedIndex = (selectedIndex + 1) % filteredModules.length;
-                break;
-            case "key.keyboard.up":
-                selectedIndex =
-                    (selectedIndex - 1 + filteredModules.length) %
-                    filteredModules.length;
-                break;
-            case "key.keyboard.enter":
-                await toggleModule(
-                    filteredModules[selectedIndex].name,
-                    !filteredModules[selectedIndex].enabled,
-                );
-                break;
-            case "key.keyboard.tab":
-                const m = filteredModules[selectedIndex]?.name;
-                if (m) {
-                    $highlightModuleName = m;
-                }
-                break;
-        }
-
-        resultElements[selectedIndex]?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-        });
+    function choose(module: Module) {
+        // Reset first so choosing the same module again also scrolls it into view.
+        if ($highlightModuleName === module.name) highlightModuleName.set(null);
+        highlightModuleName.set(module.name);
+        close(true);
     }
 
-    function handleBrowserKeyDown(e: KeyboardEvent) {
-        if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Tab") {
-            e.preventDefault();
+    function handleKeys(event: KeyboardEvent) {
+        if (event.isComposing) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            close(true);
+        } else if (event.key === 'Enter' && results[selected]) {
+            event.preventDefault();
+            choose(results[selected]);
+        } else if (results.length && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+            event.preventDefault();
+            const direction = event.key === 'ArrowDown' ? 1 : -1;
+            selected = (selected + direction + results.length) % results.length;
+            document.getElementById(id + '-' + selected)?.scrollIntoView({block: 'nearest'});
         }
     }
 
-    async function toggleModule(name: string, enabled: boolean) {
-        await setModuleEnabled(name, enabled);
+    function closeOutside(event: PointerEvent) {
+        if (expanded && event.target instanceof Node && !dock.contains(event.target)) close();
     }
 
-    function handleWindowClick(e: MouseEvent) {
-        if (!searchContainerElement.contains(e.target as Node) && !hasFocus) {
-            reset();
-        }
+    function closeOnFocusExit(event: FocusEvent) {
+        if (expanded && event.relatedTarget instanceof Node && !dock.contains(event.relatedTarget)) close();
     }
 
-    function handleMouseOut() {
-        hasFocus = false;
-        reset();
-    }
-
-    function handleWindowKeyDown() {
-        if (document.activeElement !== document.body) {
-            return;
-        }
-
-        if (autoFocus) {
-            searchInputElement.focus();
-        }
-    }
-
-    function applyValues(configurable: ConfigurableSetting) {
-        autoFocus = configurable.value.find(v => v.name === "SearchBarAutoFocus")?.value as boolean ?? true;
-    }
-
-    onMount(async () => {
-        const clickGuiSettings = await getModuleSettings("ClickGUI");
-        applyValues(clickGuiSettings);
-
-        if (autoFocus) {
-            searchInputElement.focus();
-        }
-    });
-
-    listen("moduleToggle", (e: ModuleToggleEvent) => {
-        const mod = modules.find((m) => m.name === e.moduleName);
-        if (!mod) {
-            return;
-        }
-        mod.enabled = e.enabled;
-
-        // Refilter modules to update enabled state
-        filterModules(false);
-    });
-
-    listen("keyboardKey", handleKeyDown);
-
-    listen("clickGuiValueChange", (e: ClickGuiValueChangeEvent) => {
-        applyValues(e.configurable);
-    });
+    onDestroy(() => input?.blur());
 </script>
 
-<svelte:window on:click={handleWindowClick} on:keydown={handleWindowKeyDown} on:contextmenu={handleWindowClick}/>
-
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div
-        class="search"
-        class:has-results={query}
-        class:has-focus={hasFocus}
-        bind:this={searchContainerElement}
-        on:mouseenter={() => hasFocus = true}
-        on:mouseleave={handleMouseOut}
->
-    <input
-            type="text"
-            class="search-input"
-            placeholder="Search"
-            spellcheck="false"
-            bind:value={query}
-            bind:this={searchInputElement}
-            on:input={() => filterModules(true)}
-            on:keydown={handleBrowserKeyDown}
-    />
-
-    {#if query}
-        <div class="results">
-            {#if filteredModules.length > 0}
-                {#each filteredModules as {name, enabled, aliases}, index (name)}
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <div
-                            class="result"
-                            class:enabled
-                            on:click={() => toggleModule(name, !enabled)}
-                            on:contextmenu|preventDefault={() => $highlightModuleName = name}
-                            class:selected={selectedIndex === index}
-                            bind:this={resultElements[index]}
-                    >
-                        <div class="module-name">
-                            {$spaceSeperatedNames ? convertToSpacedString(name) : name}
-                        </div>
-                        <div class="aliases">
-                            {#if aliases.length > 0}
-                                (aka {aliases.map(name => $spaceSeperatedNames ? convertToSpacedString(name) : name).join(", ")})
-                            {/if}
-                        </div>
-                    </div>
+<svelte:window on:pointerdown={closeOutside}/>
+<div class="search-dock" class:expanded style:--scale={scale} bind:this={dock}
+     role="search" aria-label="ClickGUI module search" on:focusout={closeOnFocusExit}>
+    <Reveal visible={expanded && !!term}>
+        {#if results.length}
+            <div class="search-results" role="listbox" aria-label="Matching modules" {id}>
+                {#each results as module, index (module.name)}
+                    <button type="button" class="result" class:selected={selected === index} role="option"
+                            id={id + '-' + index} aria-selected={selected === index} tabindex="-1"
+                            on:mousedown|preventDefault on:click={() => choose(module)}>
+                        <span>{convertToSpacedString(module.name)}</span>
+                    </button>
                 {/each}
-            {:else}
-                <div class="placeholder">No modules found</div>
-            {/if}
+            </div>
+        {:else}
+            <div class="empty-results" role="status">No matching modules</div>
+        {/if}
+    </Reveal>
+    {#if expanded}
+        <div class="search-bar">
+            <span class="search-icon" aria-hidden="true"></span>
+            <input type="search" role="combobox" aria-label="Search modules" autocomplete="off"
+                   aria-autocomplete="list" aria-expanded={results.length > 0}
+                   aria-controls={results.length ? id : undefined}
+                   aria-activedescendant={results.length ? id + '-' + selected : undefined}
+                   placeholder="Search modules" bind:this={input} bind:value={query}
+                   on:input={() => selected = 0} on:keydown={handleKeys}/>
+            <button type="button" class="close-search" aria-label="Close module search" on:click={() => close(true)}>
+                <VectorIcon name="close" size={7 * scale}/>
+            </button>
         </div>
+    {:else}
+        <button type="button" class="search-trigger" aria-label="Open module search" aria-expanded="false"
+                bind:this={trigger} on:click={open}>
+            <span class="search-icon" aria-hidden="true"></span>
+            <span>Search</span>
+        </button>
     {/if}
 </div>
 
-<style lang="scss">
-
-  .search {
-    position: fixed;
-    left: 20px;
-    bottom: 16px;
-    
-    background-color: var(--clickgui-search-background-color);
-    width: 280px;
-    border-radius: 30px;
-    overflow: hidden;
-    transition: ease border-radius 0.2s;
-    box-shadow: 0 0 10px var(--clickgui-search-shadow-color);
-
-    &.has-results {
-      border-radius: 10px;
+<style>
+    .search-dock {
+        position: fixed;
+        left: calc(8px * var(--scale));
+        bottom: calc(8px * var(--scale));
+        z-index: 10000;
+        width: calc(62px * var(--scale));
+        max-width: calc(100vw - 49px * var(--scale));
+        border-radius: calc(14px * var(--scale));
+        background: #131012ed;
+        color: var(--text-color);
+        box-shadow: var(--opai-hud-shadow);
+        overflow: hidden;
+        transition: width 240ms cubic-bezier(.18,.8,.3,1.08), border-radius 240ms;
+        font: calc(8.5px * var(--scale)) 'Google Sans', 'Opai CJK', sans-serif;
     }
-
-    &:focus-within,
-    &.has-focus {
-      z-index: 9999999999;
+    .search-dock.expanded { width: calc(149px * var(--scale)); border-radius: calc(10px * var(--scale)); }
+    .search-bar, .search-trigger {
+        display: flex;
+        align-items: center;
+        gap: calc(4px * var(--scale));
+        width: 100%;
+        height: calc(26.7px * var(--scale));
+        padding: 0 calc(7px * var(--scale));
     }
-  }
-
-  .results {
-    border-top: solid 2px var(--clickgui-search-border-color);
-    padding: 5px 25px;
-    max-height: 250px;
-    overflow: auto;
-
+    .search-trigger, .close-search, .result {
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+    }
+    .search-trigger { color: var(--accent-color); justify-content: center; }
+    .search-trigger:focus-visible { outline-offset: -3px; }
+    .search-icon {
+        flex: 0 0 auto;
+        width: calc(8px * var(--scale));
+        height: calc(8px * var(--scale));
+        background: var(--accent-color);
+        mask: url('/img/menu/icon-search.svg') center / contain no-repeat;
+    }
+    .search-bar input {
+        flex: 1;
+        min-width: 0;
+        font: inherit;
+        color: inherit;
+        background: transparent;
+        border: 0;
+        outline: none;
+    }
+    input::-webkit-search-cancel-button { appearance: none; }
+    .close-search {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: calc(12px * var(--scale));
+        height: calc(12px * var(--scale));
+        padding: 0;
+    }
+    .search-results {
+        padding: calc(4px * var(--scale));
+        max-height: min(46vh, calc(108px * var(--scale)));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
     .result {
-      font-size: 16px;
-      padding: 10px 0;
-      transition: ease padding-left 0.2s;
-      cursor: pointer;
-      display: grid;
-      grid-template-columns: max-content 1fr max-content;
-
-      .module-name {
-        color: var(--clickgui-text-dimmed-color);
-        transition: ease color 0.2s;
-      }
-
-      &.enabled {
-        .module-name {
-          color: var(--clickgui-search-enabled-color);
-        }
-      }
-
-      .aliases {
-        color: var(--clickgui-search-alias-color);
-        margin-left: 10px;
-      }
-
-      &.selected {
-        padding-left: 10px;
-      }
-
-      &:hover {
-        color: var(--clickgui-text-color);
-
-        &::after {
-          content: "Right-click to locate";
-          color: var(--clickgui-search-hint-color);
-          font-size: 12px;
-        }
-      }
+        display: block;
+        width: 100%;
+        padding: calc(4px * var(--scale)) calc(5px * var(--scale));
+        border-radius: calc(4px * var(--scale));
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
-
-    .placeholder {
-      color: var(--clickgui-text-dimmed-color);
-      font-size: 16px;
-      padding: 10px 0;
-    }
-
-    &::-webkit-scrollbar {
-      width: 0;
-    }
-  }
-
-  .search-input {
-    padding: 10px 18px;
-    background-color: transparent;
-    border: none;
-    font-family: "Google Sans", sans-serif;
-    font-size: 16px;
-    color: var(--clickgui-text-color);
-    width: 100%;
-  }
+    .result.selected, .result:hover { color: var(--accent-color); background: #ffffff12; }
+    .empty-results { padding: calc(7px * var(--scale)); color: var(--text-dimmed-color); }
 </style>

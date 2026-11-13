@@ -14,12 +14,14 @@ unsubscribe();
 
 ```ts
 {
-  protocol: 1, version: '1.2.0', at: number, connected: true,
+  protocol: 1, version: '1.9.1', at: number, connected: true,
   inWorld: boolean, singleplayer: boolean,
   worldInfo: {biome: string | null, dimension: string | null} | null, // 1.2.0 新增
   serverAddress: string | null, // 当前连接的输入地址，含可能的端口
   serverIP: string | null,      // 连接解析 IP；无法取得时 null
-  ping: number | null,          // 当前玩家的服务端延迟，毫秒；未知时 null
+  ping: number | null,          // 当前多人连接远端 IP 的 ICMP 往返毫秒数
+  pingSource: 'icmp',           // 未测到有效回应时，ping 为 null
+  scaffoldBps: number | null,  // 本机 Scaffold 最近两秒确认放置数 / 2
   capabilities: {serverInfo: boolean, nametags: boolean, preview: boolean},
   previewError: string | null, // 模型暂时不可用时提示，后续成功绘制会清空
   errors: string[]
@@ -42,5 +44,14 @@ await window.OpaiTheme.clearPreview();
 | `opai.bridge.snapshot` | 脚本 | 心跳、连接与功能状态 |
 | `opai.bridge.preview` | 当前主题输入网页 | 预览矩形、模块、选项与到期时间依据 |
 | `opai.bridge.features` | 主题 API | 可选功能布尔值，协议版本 1 |
+| `opai.bridge.antiCheatFlag` | 脚本 | 最新一次 `onAntiCheatFlag` |
+| `opai.bridge.antiCheatFlags` | 脚本 | 按顺序保留最近 32 次 `onAntiCheatFlag` |
+| `opai.bridge.antiCheatMarks` | 脚本 | 按服务器或世界保存达到告警门槛的玩家 UUID |
 
 接口使用宿主既有 `GET/PUT /api/v1/client/localStorage`；不使用全量 `/all` 写回。过期、无效版本、非有限坐标和未支持模块的预览请求会被忽略。脚本不对任意客户端字段、命令执行或文件访问提供网页代理。
+
+## Anti-cheat 事件
+
+同一个 GraalJS 上下文可以用 `OpaiAntiCheat.onAntiCheatFlag((check, entity, event) => {})` 订阅。返回值是取消订阅函数。独立的 LiquidScript 上下文可以从 `PersistentLocalStorage.INSTANCE.getMap()` 读取 `opai.bridge.antiCheatFlags` 并按 `sequence` 去重。脚本卸载或换世界会清除事件，`sequence` 在一次加载期间递增。
+
+事件包含 `protocol: 1`、`event: 'onAntiCheatFlag'`、`sequence`、`at`、`player`、`uuid`、`check`、`vl`（该项 VL）、`totalVl`、`detail`、`threshold` 和 `alert`（本次事件是否触发红色报警）。

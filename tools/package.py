@@ -36,8 +36,8 @@ if __name__ == '__main__':
     version = result['version']
     output = ROOT / 'release'
     output.mkdir(exist_ok=True)
-    install = output / f'Opai-Free-{version}.zip'
-    source = output / f'Opai-Free-{version}-Source.zip'
+    install = output / f'OpaiBounce-{version}.zip'
+    source = output / f'OpaiBounce-{version}-Source.zip'
     files = [(path, 'themes/opai/' + path.relative_to(ROOT / 'build/theme').as_posix()) for path in (ROOT / 'build/theme').rglob('*') if path.is_file()]
     files += [(ROOT / 'script/OpaiBounceScript.js', 'scripts/OpaiBounceScript.js')]
     files += [(ROOT / name, name) for name in ['README.md', 'LICENSE', 'LICENSE-OPAI-SHELL', 'NOTICE.md']]

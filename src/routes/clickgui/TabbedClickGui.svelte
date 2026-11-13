@@ -117,7 +117,7 @@
         applyValues(clickGuiSettings);
         void tuneFrameRate('ClickGUI',clickGuiSettings).catch(()=>{});
 
-        await setTyping(palette||$musicOpen);
+        await setTyping(palette||$musicOpen||isTextEntry(document.activeElement));
     });
 
     onDestroy(()=>{void setEditorMode(false).catch(()=>{});if(palette)void setTyping(false).catch(()=>{});});
