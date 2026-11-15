@@ -14,7 +14,7 @@ unsubscribe();
 
 ```ts
 {
-  protocol: 1, version: '1.10.2', at: number, connected: true,
+  protocol: 1, version: '1.10.3', at: number, connected: true,
   inWorld: boolean, singleplayer: boolean,
   worldInfo: {biome: string | null, dimension: string | null} | null, // 1.2.0 新增
   serverAddress: string | null, // 当前连接的输入地址，含可能的端口

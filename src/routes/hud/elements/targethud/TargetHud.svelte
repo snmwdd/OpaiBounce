@@ -81,7 +81,7 @@
     <div class="targethud" class:legacy class:idk data-style={$opaiPreferences.targetHudStyle}>
         {#key visibleTarget.uuid}
             <div class="portrait">
-                <Head src="{REST_BASE}/api/v1/client/resource/skin?uuid={visibleTarget.uuid}" size={idk ? 38 : 26}/>
+                <Head src="{REST_BASE}/api/v1/client/resource/skin?uuid={visibleTarget.uuid}" size={idk ? 34 : 26}/>
                 <span class="hit-tint" bind:this={flashLayer}></span>
             </div>
         {/key}
@@ -118,11 +118,12 @@
         font: 8px 'Google Sans', 'Opai CJK', sans-serif;
     }
     .targethud.legacy { width: 130px; border-radius: 4px; }
-    .targethud.idk { width: 152px; height: 44px; padding: 3px; border-radius: 0; border: 1px solid #ffffff24; background: var(--opai-hud-panel, #16191ec9); }
-    .idk .portrait { width: 38px; height: 38px; }
+    .targethud.idk { width: 136px; height: 40px; padding: 3px; border-radius: 0; border: 1px solid #ffffff24; background: var(--opai-hud-panel, #16191ec9); }
+    .idk .portrait { width: 34px; height: 34px; }
     .idk .portrait :global(.head), .idk .hit-tint { border-radius: 0; }
-    .idk .name { top: 6px; left: 45px; right: 6px; height: 10px; }
-    .idk .track { left: 45px; right: 6px; top: 23px; bottom: auto; height: 12px; border-radius: 0; background: #30333e; }
+    .idk .name { top: 5px; left: 40px; right: 5px; height: 10px; }
+    .idk .name :global(.pixel-text) { max-width: 100%; }
+    .idk .track { left: 40px; right: 5px; top: 21px; bottom: auto; height: 10px; border-radius: 0; background: #30333e; }
     .idk .track > div { border-radius: 0; background: #c4c3ff; }
     .percentage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: white; filter: drop-shadow(1px 1px 0 #30303c); }
     .portrait { position: relative; width: 26px; height: 26px; }

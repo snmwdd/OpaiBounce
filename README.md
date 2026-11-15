@@ -1,6 +1,6 @@
 # OpaiBounce
 
-An Opai-style LiquidBounce theme and companion LiquidScript. Current theme **1.1.4**, script **1.10.2**.
+An Opai-style LiquidBounce theme and companion LiquidScript. Current theme **1.1.5**, script **1.10.3**.
 
 [简体中文](README简体中文.md)
 # The Script Must Be Installed for the Theme to Function Properly
@@ -51,7 +51,7 @@ Passing automated checks does not mean that in-game performance or visuals have 
 
 ## Installation
 
-Download the matching theme and script from [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) or run `npm run package` to build `release/OpaiBounce-1.1.4.zip` from this checkout.
+Download the matching theme and script from [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) or run `npm run package` to build `release/OpaiBounce-1.1.5.zip` from this checkout.
 
 1. Run `.client theme browse` in-game, then copy the entire `opai` folder from `themes/opai` inside the installation package into the theme directory that opens.
 2. Install the official LiquidBounce Script API extension. Run `.script browse`, then place `scripts/OpaiBounceScript.js` from the installation package into the scripts directory. Make sure only one copy of the script is present.

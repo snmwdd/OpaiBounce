@@ -4,7 +4,7 @@
 // Screen heartbeats keep telemetry and preview alive while the singleplayer world is paused.
 (function () {
     'use strict';
-    const VERSION = '1.10.2', PREFIX = 'opai.bridge.';
+    const VERSION = '1.10.3', PREFIX = 'opai.bridge.';
     function decode(value) { try { return value == null ? null : JSON.parse(String(value)); } catch (_) { return null; } }
     function previewRequest(value, now, width, height) {
         const data = decode(value), r = data && data.rect;
@@ -889,8 +889,8 @@
         const isBed = previous?.key === key ? previous.bed : block.getBlock() instanceof bed;
         let partner = previous?.key === key ? previous.partner : null;
         if (isBed && !partner) {
-            const facing = block.getValue(blockProperties.HORIZONTAL_FACING);
-            partner = pos.relative(block.getValue(bed.PART) === bedPart.HEAD ? facing.getOpposite() : facing);
+            partner = bedPartner(pos,block,blockProperties,bedPart);
+            if (!partner) return;
         }
         const occluded = previous?.key === key ? previous.occluded : directions.every(direction => {
             const side = pos.relative(direction);
@@ -1933,11 +1933,18 @@
         }
         bedRecords=records;
     }
+    function bedPartner(pos,block,properties,part) {
+        // GraalJS does not expose inherited static BedBlock.PART in Minecraft 26.3.
+        // Use the declared canonical property and verify the current state still owns it.
+        const facing=properties.HORIZONTAL_FACING, section=properties.BED_PART;
+        if (!facing || !section || !block.hasProperty(facing) || !block.hasProperty(section)) return null;
+        const direction=block.getValue(facing);
+        return pos.relative(block.getValue(section)===part.HEAD ? direction.getOpposite() : direction);
+    }
     function bedProtection(bed,types) {
         const level=client.level, pos=bed.trackedBlockPos(), block=level.getBlockState(pos);
-        const facing=block.getValue(types.properties.HORIZONTAL_FACING);
-        const partner=pos.relative(block.getValue(types.bed.PART)===types.part.HEAD ? facing.getOpposite() : facing);
-        if (!level.hasChunkAt(partner) || !(level.getBlockState(partner).getBlock() instanceof types.bed)) return 'Unknown Protection';
+        const partner=bedPartner(pos,block,types.properties,types.part);
+        if (!partner || !level.hasChunkAt(partner) || !(level.getBlockState(partner).getBlock() instanceof types.bed)) return 'Unknown Protection';
         let covered=0, total=0;
         for (const center of [pos,partner]) for (const direction of types.directions) {
             const next=center.relative(direction);

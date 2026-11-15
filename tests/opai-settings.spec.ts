@@ -394,8 +394,8 @@ test('IDK Target HUD persists, uses a square portrait and a centered percentage 
     api.emit('targetChange',{target});
     const hud=page.locator('.targethud');
     await expect(hud).toHaveAttribute('data-style','idk');
-    await expect(hud).toHaveCSS('width','152px');await expect(hud).toHaveCSS('height','44px');
-    await expect(hud.locator('.head')).toHaveCSS('width','38px');await expect(hud.locator('.head')).toHaveCSS('border-radius','0px');
+    await expect(hud).toHaveCSS('width','136px');await expect(hud).toHaveCSS('height','40px');
+    await expect(hud.locator('.head')).toHaveCSS('width','34px');await expect(hud.locator('.head')).toHaveCSS('border-radius','0px');
     await expect(hud.locator('.name').getByRole('img',{name:target.username,exact:true})).toBeVisible();
     await expect(hud.getByRole('progressbar',{name:'Target health'})).toHaveAttribute('aria-valuenow','80.6');
     await expect(hud.locator('.percentage').getByRole('img',{name:'80.6%',exact:true})).toBeVisible();
@@ -403,6 +403,10 @@ test('IDK Target HUD persists, uses a square portrait and a centered percentage 
     const bar=await hud.locator('.track').boundingBox(), portrait=await hud.locator('.portrait').boundingBox();
     expect(bar!.x).toBeGreaterThan(portrait!.x+portrait!.width);
     await hud.screenshot({path:'reports/idk-targethud.png'});
+    api.emit('targetChange',{target:{...target,username:'ABCDEFGHIJKLMNOP'}});
+    const longName=hud.locator('.name');
+    await expect(longName.getByRole('img',{name:'ABCDEFGHIJKLMNOP',exact:true})).toBeVisible();
+    expect((await longName.locator('svg').boundingBox())!.width).toBeLessThanOrEqual((await longName.boundingBox())!.width);
     api.emit('targetChange',{target:{...target,actualHealth:-5}});
     await expect(hud.getByRole('progressbar')).toHaveAttribute('aria-valuenow','0');
     api.emit('targetChange',{target:{...target,actualHealth:100}});

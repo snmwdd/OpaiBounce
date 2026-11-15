@@ -44,7 +44,7 @@ function host(arity=9,musicSupport=false){
  const reflectedField=name=>({setAccessible(){},get:object=>object[name]});
  const types={ModuleBedPlates:{INSTANCE:nativeBeds,class:{getClassLoader:()=>null,getDeclaredField:reflectedField,getDeclaredMethod:name=>({setAccessible(){},invoke:object=>object[name]()})}},
   Class:{class:Function,forName:()=>({getDeclaredField:reflectedField})},
-  Direction:{values:()=>[]},BlockStateProperties:{HORIZONTAL_FACING:'facing'},BedPart:{HEAD:'head'},BedBlock:class{},
+  Direction:{values:()=>[]},BlockStateProperties:{HORIZONTAL_FACING:'facing',BED_PART:'part'},BedPart:{HEAD:'head'},BedBlock:class{},
   ToggleableValueGroup,ArrayList:class extends Array{add(value){this.push(value);}},JsonObject:class{},JsonArray:class{},FriendManager:{INSTANCE:{isFriend:entity=>friends.has(entity)}},ModuleClickGui:{INSTANCE:{onEnabled(){}}},Render3DKt:{submitTextAlwaysOnTop(...args){exact(args[2],args[3]);draws.push(['worldText',...args]);}},'Font$DisplayMode':{SEE_THROUGH:'see-through'},ScriptSetting:{INSTANCE:{boolean:setting,int:setting,float:setting,choose:o=>setting({...o,default:{getTag:()=>o.default}})}},
  EventManager:{INSTANCE:manager},EventHook:class{constructor(owner,priority,callback){Object.assign(this,{owner,priority,callback});}},EventListener:class{},Consumer:function(f){return f;},Component:{literal:component},PersistentLocalStorage:{INSTANCE:{getMap:()=>store}},ModuleNametags:tagsType,
  RenderedEntities:{INSTANCE:{iterator(){let i=0;return{hasNext:()=>i<entities.length,next:()=>entities[i++]};}}},EntityExtensionsKt:{getActualHealth:()=>20,hasHealthScoreboard:()=>false,getSimpleDisplayName:e=>({text:e===player?'ProtectedSelf':'ProtectedName'}),interpolateCurrentPosition:()=>vec(0,0,0)},WorldToScreen:{calculateScreenPos:()=>vec(500,100,.5)},
@@ -209,7 +209,7 @@ function antiCheatHost() {
   ChatHudExtensionKt:{removeMessage:removeChat},
   Class:{...h.types.Class,class:Function},Object:{class:Object},TransferOrigin:{INCOMING:'incoming'},Direction:{values:()=>directions},
   PlayerTeam:{formatNameForTeam:(team,name)=>h.types.Component.literal((team??'')+name.text).withColor(0x5555ff)},
-  BedBlock:class{},BedPart:{HEAD:'head'},BlockStateProperties:{HORIZONTAL_FACING:'facing'},Blocks:{},
+  BedBlock:class{},BedPart:{HEAD:'head'},BlockStateProperties:{HORIZONTAL_FACING:'facing',BED_PART:'part'},Blocks:{},
   ClientboundBlockDestructionPacket:BreakPacket,ClientboundBlockUpdatePacket:BlockPacket,ClientboundSectionBlocksUpdatePacket:ChunkPacket,ClientboundMoveEntityPacket:MovePacket,ClientboundSwingAnimationPacket:SwingPacket,ClientboundAddEntityPacket:SpawnPacket,EntityType:{ITEM:'item'},
  });
  function removeChat(_chat,id){for(let i=chatLines.length-1;i>=0;i--)if(chatLines[i].id===id)chatLines.splice(i,1);}
@@ -669,8 +669,9 @@ test('mining checks correlate server removals with the matching player animation
  }
  assert(h.chat.some(line=>line.text.includes('Nuker (vl:1.0)')));
  assert(h.chat.some(line=>line.text.includes('Fast Mine (vl:1.0)')));
- const bed=new h.types.BedBlock();h.types.BedBlock.PART='part';
- for(const [x,part] of [[20,'foot'],[21,'head']])h.blocks.set(`${x},63,0`,{isAir:()=>false,isSolidRender:()=>false,getBlock:()=>bed,getDestroySpeed:()=>.2,getValue:property=>property==='part'?part:h.directions[0]});
+ const bed=new h.types.BedBlock();
+ assert.equal(h.types.BedBlock.PART,undefined,'Model GraalJS missing inherited statics');
+ for(const [x,part] of [[20,'foot'],[21,'head']])h.blocks.set(`${x},63,0`,{isAir:()=>false,isSolidRender:()=>false,getBlock:()=>bed,getDestroySpeed:()=>.2,hasProperty:property=>['part','facing'].includes(property),getValue:property=>{assert(property,'Property must be non-null');return property==='part'?part:h.directions[0];}});
  const pos=h.point(20,63,0);animation(pos,0);h.tick();animation(pos,6);h.tick();remove(pos,true);
  assert(h.chat.some(line=>line.text.includes('Bed Nuker (vl:1.0)')));
  h.events.disable();
@@ -982,9 +983,9 @@ function bedHost(){
  const list=values=>({isEmpty:()=>!values.length,iterator(){let i=0;return{hasNext:()=>i<values.length,next:()=>values[i++]};}});
  const directions=[{dx:1,dy:0,dz:0},{dx:-1,dy:0,dz:0},{dx:0,dy:1,dz:0},{dx:0,dy:-1,dz:0},{dx:0,dy:0,dz:1},{dx:0,dy:0,dz:-1}];
  for(const d of directions)d.getOpposite=()=>directions.find(o=>o.dx===-d.dx&&o.dy===-d.dy&&o.dz===-d.dz);
- h.types.Direction.values=()=>directions;h.types.BedBlock.PART='part';
+ h.types.Direction.values=()=>directions;assert.equal(h.types.BedBlock.PART,undefined);
  const head=point(0,64,0),foot=point(-1,64,0),bedBlock=new h.types.BedBlock();
- const stateAt=pos=>{const bed=pos.equals(head)||pos.equals(foot);return {getBlock:()=>bed?bedBlock:null,getValue:key=>key==='part'?(pos.equals(head)?'head':'foot'):directions[0],isCollisionShapeFullBlock:()=>covered.has(`${pos.getX()},${pos.getY()},${pos.getZ()}`)};};
+ const stateAt=pos=>{const bed=pos.equals(head)||pos.equals(foot);return {getBlock:()=>bed?bedBlock:null,hasProperty:key=>bed&&['part','facing'].includes(key),getValue:key=>{assert(key,'Property must be non-null');return key==='part'?(pos.equals(head)?'head':'foot'):directions[0];},isCollisionShapeFullBlock:()=>covered.has(`${pos.getX()},${pos.getY()},${pos.getZ()}`)};};
  const position={distanceToSqr:()=>distance*distance,add(){return this;}};
  const entries=[], block={asItem:()=>({getDefaultInstance:()=>({isEmpty:()=>false,id:'wool'})})};
  const bed={trackedBlockPos:()=>head,block:()=>bedBlock,pos:()=>position,surroundingBlocks:()=>list(entries)};

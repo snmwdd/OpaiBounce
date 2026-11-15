@@ -1,4 +1,4 @@
-# OpaiBounceScript 1.10.2
+# OpaiBounceScript 1.10.3
 
 `OpaiBounceScript.js` is the single source of the companion LiquidScript. It provides server address / Ping, ESP and Nametags previews, Opai Nametags, island activity telemetry, and the native TritiumMusic and Anti-cheat modules.
 
@@ -30,3 +30,15 @@ Existing Boolean setting keys are preserved. Each check is registered as a nativ
 Opai settings include `Nametag Distance` and `Bed Distance`, independently saved from 8 to 256 blocks (default 128). The script reuses the native BedPlates tracker, filters, self-bed exclusion and scale curve; the native module must be enabled. Bed cards show one horizontal row of distinct block icons and a protection status. `Not Protected` has no icon row. Protection checks the first layer above and beside both bed halves, not the floor. The original renderer is restored on script unload or an incompatible API.
 
 `Target HUD` offers `New`, `Old`, and `IDK`. IDK uses a square portrait, original code-native pixel lettering and a centered health-percentage bar.
+
+### Native bed-property regression
+
+Minecraft 26.3 exposes the bed-half property as `BlockStateProperties.BED_PART`; GraalJS does not expose the inherited static `BedBlock.PART`. The script validates state properties before reading either half and shares the corrected path with Bed Nuker. `script/tests/native/BedProtectionProbe.java` exercises the production JS function against real game block states. With the Minecraft, LiquidBounce, GraalJS and client dependency JARs in `LIQUIDBOUNCE_CLASSPATH`, run:
+
+```sh
+mkdir -p build/native-tests
+javac -cp "$LIQUIDBOUNCE_CLASSPATH" -d build/native-tests script/tests/native/BedProtectionProbe.java
+java -cp "build/native-tests:$LIQUIDBOUNCE_CLASSPATH" BedProtectionProbe script/OpaiBounceScript.js
+```
+
+The test covers 16 bed colors, four directions, both halves, empty/partial/full protection, and unloaded/replaced beds. IDK is now 136 × 40 logical pixels with a 34-pixel portrait; New and Old are unchanged.

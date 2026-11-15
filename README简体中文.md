@@ -1,6 +1,6 @@
 # OpaiBounce
 
-为 LiquidBounce 制作的 Opai 风格主题与配套 LiquidScript。当前主题 **1.1.4**，脚本 **1.10.2**。
+为 LiquidBounce 制作的 Opai 风格主题与配套 LiquidScript。当前主题 **1.1.5**，脚本 **1.10.3**。
 
 # 请必须装备脚本才能正常运行
 https://github.com/snmwdd/OpaiBounce/tree/main/script
@@ -48,7 +48,7 @@ npm run test:browser
 
 ## 安装
 
-从 [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) 下载同版本的主题和脚本，或在当前源码运行 `npm run package` 生成 `release/OpaiBounce-1.1.4.zip`。
+从 [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) 下载同版本的主题和脚本，或在当前源码运行 `npm run package` 生成 `release/OpaiBounce-1.1.5.zip`。
 
 1. 在游戏内执行 `.client theme browse`，将安装包 `themes/opai` 中的整个 `opai` 文件夹放入打开的主题目录。
 2. 安装 LiquidBounce 官方 Script API 扩展。执行 `.script browse`，将安装包 `scripts/OpaiBounceScript.js` 放入脚本目录，只保留一份该脚本。
