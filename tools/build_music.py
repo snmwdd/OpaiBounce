@@ -15,6 +15,14 @@ GSON_VERSION = '2.11.0'
 GSON_SHA256 = '57928d6e5a6edeb2abd3770a8f95ba44dce45f3b23b7a9dc2b309c581552a78b'
 
 
+def add_file(archive, path, name):
+    # Stable metadata keeps identical source builds reproducible across checkouts.
+    info = zipfile.ZipInfo(name, date_time=(2026, 10, 26, 0, 0, 0))
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.external_attr = 0o100644 << 16
+    archive.writestr(info, path.read_bytes())
+
+
 def build(gson=None, tests=False):
     if not shutil.which('javac'):
         raise SystemExit('JDK 21+ is required: javac is missing from PATH.')
@@ -45,14 +53,14 @@ def build(gson=None, tests=False):
     output.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output / 'OpaiMusicService.jar', 'w', zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(classes.rglob('*.class')):
-            archive.write(path, path.relative_to(classes).as_posix())
+            add_file(archive, path, path.relative_to(classes).as_posix())
         for name in ['LICENSE-TRITIUM', 'LICENSE-DANGO', 'UPSTREAM.md']:
-            archive.write(MUSIC / name, name)
+            add_file(archive, MUSIC / name, name)
     with zipfile.ZipFile(output / 'OpaiMusicService-Source.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(MUSIC.rglob('*')):
-            if path.is_file():
-                archive.write(path, 'music/' + path.relative_to(MUSIC).as_posix())
-        archive.write(Path(__file__), 'tools/build_music.py')
+            if path.is_file() and path.name != '.DS_Store' and not path.name.startswith('._') and '__pycache__' not in path.parts:
+                add_file(archive, path, 'music/' + path.relative_to(MUSIC).as_posix())
+        add_file(archive, Path(__file__), 'tools/build_music.py')
     if tests:
         test_classes = ROOT / 'build/music/test-classes'
         if test_classes.exists():

@@ -1,6 +1,6 @@
 # OpaiBounce
 
-An Opai-style LiquidBounce theme and companion LiquidScript. Current theme **1.1.3**, script **1.10.1**.
+An Opai-style LiquidBounce theme and companion LiquidScript. Current theme **1.1.4**, script **1.10.2**.
 
 [简体中文](README简体中文.md)
 # The Script Must Be Installed for the Theme to Function Properly
@@ -51,7 +51,7 @@ Passing automated checks does not mean that in-game performance or visuals have 
 
 ## Installation
 
-Download the matching theme and script from [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) or run `npm run package` to build `release/OpaiBounce-1.1.3.zip` from this checkout.
+Download the matching theme and script from [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) or run `npm run package` to build `release/OpaiBounce-1.1.4.zip` from this checkout.
 
 1. Run `.client theme browse` in-game, then copy the entire `opai` folder from `themes/opai` inside the installation package into the theme directory that opens.
 2. Install the official LiquidBounce Script API extension. Run `.script browse`, then place `scripts/OpaiBounceScript.js` from the installation package into the scripts directory. Make sure only one copy of the script is present.
@@ -94,3 +94,9 @@ GD Music Platform (`music.gdstudio.xyz`) has its own separate terms of service a
 Minecraft version images, fonts, and other third-party assets retain their respective rights and attribution. They are not relicensed under this repository's GPL declaration.
 
 This is an unofficial theme port and is not affiliated with any of the upstream projects mentioned above.
+
+## Display updates
+
+Opai settings offer `New`, `Old` and `IDK` target HUD layouts, plus independent Nametag and Bed render-distance sliders (8–256 blocks). IDK uses a square portrait, code-native pixel lettering and a centered health-percentage bar. Native BedPlates tracking supplies rounded icon-row protection cards.
+
+`Inventory Drop` adds a per-check native option group. It flags more than five distinct discard actions in five seconds, estimating missing thrower information from spawn origin, initial velocity and recent player samples. Estimated sources are labeled. Legitimate rapid inventory clearing can trigger it; it is not proof of cheating or of an open inventory. See [script details](script/README.md).

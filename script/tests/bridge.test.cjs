@@ -15,12 +15,13 @@ function host(arity=9,musicSupport=false){
  const nativeTags={getEnabled:()=>enabled,setEnabled(value){enabled=value;emit('ModuleToggleEvent',{getModuleName:()=> 'Nametags'});}};
  const tagsType={INSTANCE:nativeTags,class:{getDeclaredField(name){assert.equal(name,'overlayRenderHandler');return{setAccessible(){},get:()=>legacy};}}};
  const manager={registerEventHook(event,hook){assert(!hooks.some(x=>x.event===event&&x.hook===hook));hooks.push({event,hook});},unregisterEventHook(event,hook){hooks=hooks.filter(x=>x.event!==event||x.hook!==hook);}};
- const vec=(x,y,z)=>({x:()=>x,y:()=>y,z:()=>z,add(){return this;},distanceTo:()=>65});
+ const vec=(x,y,z)=>({x:()=>x,y:()=>y,z:()=>z,add(){return this;},distanceTo:()=>65,distanceToSqr:()=>65*65});
  const entity={isAlive:()=>true,getUUID:()=> 'id',getPose:()=> 'standing',getEyeHeight:()=>1.6,position:()=>vec(1,2,3),getHealth:()=>20,getMaxHealth:()=>20,getAbsorptionAmount:()=>0};
  const player={...entity,getUUID:()=> 'self'};const entities=[entity];let screen=null;
  const exact=(...values)=>values.forEach(v=>{assert.equal(typeof v,'number');assert.equal(v,Math.fround(v),'Lossy Java float: '+v);});
  const font={getHeight:()=>43,getScaleToVanillaFont:()=>9/43,getStringWidth:(component,scale)=>{counters.widths++;exact(scale);return component.text.length*20*scale;},draw(...args){assert.equal(args.length,9);exact(args[2],args[3],args[6]);draws.push(['text',...args]);}};
- const ctx={},mc={player,level:{},gameRenderer:{mainCamera:()=>({position:()=>vec(0,0,0)})},gui:{screen:()=>screen},getWindow:()=>({getGuiScaledWidth:()=>1000,getGuiScaledHeight:()=>550}),hasSingleplayerServer:()=>false,getCurrentServer:()=>({ip:'play.example.org:25565'}),getConnection:()=>({getConnection:()=>({getRemoteAddress:()=>({getAddress:()=>({getHostAddress:()=> '203.0.113.10'})})}),getPlayerInfo:()=>({getLatency:()=>37})})};
+ const poses={pushMatrix(){},popMatrix(){},translate:exact,scale:exact};
+ const ctx={pose:()=>poses,item:(stack,x,y)=>draws.push(['item',stack,x,y])},mc={player,level:{},gameRenderer:{mainCamera:()=>({position:()=>vec(0,0,0)})},gui:{screen:()=>screen},getWindow:()=>({getGuiScaledWidth:()=>1000,getGuiScaledHeight:()=>550}),hasSingleplayerServer:()=>false,getCurrentServer:()=>({ip:'play.example.org:25565'}),getConnection:()=>({getConnection:()=>({getRemoteAddress:()=>({getAddress:()=>({getHostAddress:()=> '203.0.113.10'})})}),getPlayerInfo:()=>({getLatency:()=>37})})};
  const className=name=>name.split('.').at(-1);
  const setting=o=>{
   let v=o.default;const callbacks=[];
@@ -39,7 +40,12 @@ function host(arity=9,musicSupport=false){
  }
  function component(text,color=null) {return {text,color,parts:[],getString(){return this.text;},getVisualOrderText:()=>({text}),withColor:rgb=>component(text,rgb),equals:other=>other?.text===text&&other?.color===color,append(part){this.text+=part.text;this.parts.push(part);return this;},
   getStyle(){return {withUnderlined(){return this;},withClickEvent:click=>({click})};},setStyle(style){this.click=style.click;return this;}};}
- const types={ToggleableValueGroup,ArrayList:class extends Array{add(value){this.push(value);}},JsonObject:class{},JsonArray:class{},FriendManager:{INSTANCE:{isFriend:entity=>friends.has(entity)}},ModuleClickGui:{INSTANCE:{onEnabled(){}}},Render3DKt:{submitTextAlwaysOnTop(...args){exact(args[2],args[3]);draws.push(['worldText',...args]);}},'Font$DisplayMode':{SEE_THROUGH:'see-through'},ScriptSetting:{INSTANCE:{boolean:setting,int:setting,float:setting,choose:o=>setting({...o,default:{getTag:()=>o.default}})}},
+ const nativeBeds={getEnabled:()=>false};
+ const reflectedField=name=>({setAccessible(){},get:object=>object[name]});
+ const types={ModuleBedPlates:{INSTANCE:nativeBeds,class:{getClassLoader:()=>null,getDeclaredField:reflectedField,getDeclaredMethod:name=>({setAccessible(){},invoke:object=>object[name]()})}},
+  Class:{class:Function,forName:()=>({getDeclaredField:reflectedField})},
+  Direction:{values:()=>[]},BlockStateProperties:{HORIZONTAL_FACING:'facing'},BedPart:{HEAD:'head'},BedBlock:class{},
+  ToggleableValueGroup,ArrayList:class extends Array{add(value){this.push(value);}},JsonObject:class{},JsonArray:class{},FriendManager:{INSTANCE:{isFriend:entity=>friends.has(entity)}},ModuleClickGui:{INSTANCE:{onEnabled(){}}},Render3DKt:{submitTextAlwaysOnTop(...args){exact(args[2],args[3]);draws.push(['worldText',...args]);}},'Font$DisplayMode':{SEE_THROUGH:'see-through'},ScriptSetting:{INSTANCE:{boolean:setting,int:setting,float:setting,choose:o=>setting({...o,default:{getTag:()=>o.default}})}},
  EventManager:{INSTANCE:manager},EventHook:class{constructor(owner,priority,callback){Object.assign(this,{owner,priority,callback});}},EventListener:class{},Consumer:function(f){return f;},Component:{literal:component},PersistentLocalStorage:{INSTANCE:{getMap:()=>store}},ModuleNametags:tagsType,
  RenderedEntities:{INSTANCE:{iterator(){let i=0;return{hasNext:()=>i<entities.length,next:()=>entities[i++]};}}},EntityExtensionsKt:{getActualHealth:()=>20,hasHealthScoreboard:()=>false,getSimpleDisplayName:e=>({text:e===player?'ProtectedSelf':'ProtectedName'}),interpolateCurrentPosition:()=>vec(0,0,0)},WorldToScreen:{calculateScreenPos:()=>vec(500,100,.5)},
  FontManager:{INSTANCE:{fontFace:()=>{counters.fontLookups++;return{getRenderer:()=>font};}},getFONT_RENDERER:()=>font},Render2DKt:{class:{getMethods:()=>[{getName:()=> 'drawRoundedRect',getParameterCount:()=>arity}]},drawQuad(...args){exact(...args.slice(1,5));draws.push(['quad',...args]);},drawRoundedRect(...args){assert.equal(args.length,arity);exact(...args.slice(1,6),args.at(-1));draws.push(['rounded',...args]);}},Color4b:class{constructor(...values){this.values=values;}},InventoryScreen:{extractEntityInInventoryFollowsMouse(...args){assert.equal(args.length,10);exact(...args.slice(6,9));draws.push(['model',...args]);}},ModuleESP:{INSTANCE:{getColor:()=> 'actual-esp-color'}},System:{currentTimeMillis:()=>clock}
@@ -64,7 +70,7 @@ function host(arity=9,musicSupport=false){
  }
  const context=vm.createContext({Java:{to:value=>Object.assign(value,{getClass:()=>Array}),type(name){const key=className(name);if(types[key])return types[key];if(/Event$/.test(key))return{class:key};throw new Error('Unknown host type '+name);},extend(base){if(base===ToggleableValueGroup)return class extends base{constructor(...args){const overrides=args.pop();super(...args);Object.assign(this,overrides);}};return class{constructor(options){Object.assign(this,options);}};}},mc,Client:{displayChatMessage:m=>messages.push(m)},registerScript(info){assert.equal(info.name,'OpaiBridge');return{on:(name,callback)=>events[name]=callback,registerCommand:info=>commands.set(info.name,info),registerModule(info,cb){let enabled=false;const handlers={};const controls=Object.fromEntries(Object.entries(info.settings).map(([key,value])=>[key,value instanceof ToggleableValueGroup?value.getEnabledValue():value]));const registered={...info,controls,getEnabled:()=>enabled,setEnabled:v=>{enabled=v;handlers[v?'enable':'disable']?.();emit('ModuleToggleEvent',{getModuleName:()=>info.name,getEnabled:()=>v});},on:(n,f)=>handlers[n]=f};modules.set(info.name,registered);cb(registered);}};},console});
  vm.runInContext(source,context);
- return {types,counters,music,icmp,friends,entity,modules,commands,context,get registeredModule(){return modules.get('TritiumMusic');},events,emit,get store(){return store;},replaceStore(){const previous=store;store=makeStore();return previous;},draws,messages,mc,ctx,nativeTags,legacy,get hooks(){return hooks;},advance(t){clock+=t;},clock:()=>clock,setScreen(value){screen=value;}};
+ return {types,nativeBeds,counters,music,icmp,friends,entity,modules,commands,context,get registeredModule(){return modules.get('TritiumMusic');},events,emit,get store(){return store;},replaceStore(){const previous=store;store=makeStore();return previous;},draws,messages,mc,ctx,nativeTags,legacy,get hooks(){return hooks;},advance(t){clock+=t;},clock:()=>clock,setScreen(value){screen=value;}};
 }
 test('validates preview protocol, lease, bounds, numeric values and scaled viewport',()=>{
  const request={protocol:1,at:100,module:'ESP',viewport:{width:2000,height:1100},rect:{x:1500,y:200,width:400,height:600}};
@@ -74,8 +80,8 @@ test('validates preview protocol, lease, bounds, numeric values and scaled viewp
 });
 test('auto-start registers the two native modules, provides real connection data, and cleans up on unload/reload',()=>{
  const modules=host().modules;assert.deepEqual([...modules.keys()],['TritiumMusic','Anti-cheat']);assert.equal(modules.get('Anti-cheat').category,'Misc');assert.equal(modules.get('Anti-cheat').getEnabled(),false);
- const h=host();h.events.enable();h.emit('GameTickEvent',{});assert.equal(h.nativeTags.getEnabled(),true);assert.equal(h.hooks.length,6);const data=JSON.parse(h.store.get('opai.bridge.snapshot'));assert.equal(data.serverAddress,'play.example.org:25565');assert.equal(data.ping,null);assert.equal(data.pingSource,'icmp');assert.equal(data.serverIP,'203.0.113.10');assert.equal(data.capabilities.nametags,true);
- h.events.enable();h.emit('GameTickEvent',{});assert.equal(h.hooks.length,6);h.events.disable();assert.equal(h.hooks.length,1);assert.equal(h.hooks[0].hook,h.legacy);assert.equal(h.nativeTags.getEnabled(),false);assert.equal(h.store.has('opai.bridge.snapshot'),false);h.events.enable();h.emit('GameTickEvent',{});h.events.disable();assert.equal(h.hooks.length,1);
+ const h=host();h.events.enable();h.emit('GameTickEvent',{});assert.equal(h.nativeTags.getEnabled(),true);assert.equal(h.hooks.length,7);const data=JSON.parse(h.store.get('opai.bridge.snapshot'));assert.equal(data.serverAddress,'play.example.org:25565');assert.equal(data.ping,null);assert.equal(data.pingSource,'icmp');assert.equal(data.serverIP,'203.0.113.10');assert.equal(data.capabilities.nametags,true);
+ h.events.enable();h.emit('GameTickEvent',{});assert.equal(h.hooks.length,7);h.events.disable();assert.equal(h.hooks.length,1);assert.equal(h.hooks[0].hook,h.legacy);assert.equal(h.nativeTags.getEnabled(),false);assert.equal(h.store.has('opai.bridge.snapshot'),false);h.events.enable();h.emit('GameTickEvent',{});h.events.disable();assert.equal(h.hooks.length,1);
 });
 test('world labels use projected coordinates, protected real names and three separate pills',()=>{
  const h=host();h.events.enable();h.emit('GameTickEvent',{});h.emit('GameTickEvent',{});h.emit('OverlayRenderEvent',{getTickDelta:()=>.5,getContext:()=>h.ctx});
@@ -86,7 +92,7 @@ test('Anti-cheat exposes real native toggle groups with short nested names and h
  const module=host().modules.get('Anti-cheat');
  const visible=Object.values(module.settings).filter(value=>!value.hidden);
  const groups=visible.filter(value=>value.getValueType?.()==='TOGGLEABLE');
- assert.equal(groups.length,19);
+ assert.equal(groups.length,20);
  assert(!visible.some(value=>value.getName().includes('Settings')));
  assert.deepEqual(visible.filter(value=>!groups.includes(value)).map(value=>value.getName()),['FlagIntervalSeconds','AlertVL']);
  for(const group of groups){
@@ -159,6 +165,9 @@ function antiCheatHost() {
  class BlockItem{getBlock(){return ordinaryBlock;}}
  const emptyHand={getItem:()=>null,getDestroySpeed:()=>1};
  const projectiles = [], projectileCounters = {queries:0};
+ const droppedItems=[], dropCounters={queries:0};
+ class ItemEntity {}
+ ItemEntity.class=ItemEntity;
  let damageSource = null;
  class Projectile {}
  Projectile.class = Projectile;
@@ -186,26 +195,26 @@ function antiCheatHost() {
  });
  Object.defineProperty(e,'hurtTime',{get:()=>flight.hurt});
  class Packet {constructor(values){Object.assign(this,values);}}
- class BreakPacket extends Packet{};class BlockPacket extends Packet{};class ChunkPacket extends Packet{};class MovePacket extends Packet{};class SwingPacket extends Packet{};
- for(const type of [BreakPacket,BlockPacket,ChunkPacket,MovePacket,SwingPacket])type.class=type;
+ class BreakPacket extends Packet{};class BlockPacket extends Packet{};class ChunkPacket extends Packet{};class MovePacket extends Packet{};class SwingPacket extends Packet{};class SpawnPacket extends Packet{};
+ for(const type of [BreakPacket,BlockPacket,ChunkPacket,MovePacket,SwingPacket,SpawnPacket])type.class=type;
  const directions=[{dx:1,dy:0,dz:0},{dx:-1,dy:0,dz:0},{dx:0,dy:1,dz:0},{dx:0,dy:-1,dz:0},{dx:0,dy:0,dz:1},{dx:0,dy:0,dz:-1}];
  for(const d of directions)d.getOpposite=()=>directions.find(o=>o.dx===-d.dx&&o.dy===-d.dy&&o.dz===-d.dz);
  Object.assign(h.types,{
-  Projectile,AbstractArrow:Arrow,ThrowableProjectile:Throwable,ThrownTrident:Trident,WindCharge,Fireball,Items,
+  ItemEntity,Projectile,AbstractArrow:Arrow,ThrowableProjectile:Throwable,ThrownTrident:Trident,WindCharge,Fireball,Items,
   BlockPos:{containing:(x,y,z)=>typeof x==='number'?point(x,y,z):point(x.x(),x.y(),x.z())},MobEffects:{},Attributes:{SAFE_FALL_DISTANCE:'safeFall',FALL_DAMAGE_MULTIPLIER:'fallDamage',BLOCK_BREAK_SPEED:'breakSpeed'},BlockItem,ItemTags:{SWORDS:'swords'},
   ClientChat:{chat:(component,metadata)=>{const id=metadata.args[1];if(id)removeChat(null,id);chatLines.unshift({id,component,'liquid_bounce$getId':()=>id});if(!id)chat.push({text:component.text,color:component.color,parts:component.parts.map(p=>[p.text,p.color])});}},
   MessageMetadata:class{constructor(...args){this.args=args;}},
   RunnableClickEvent:class{constructor(run){this.run=run;}},
   ChatComponent:{class:{getDeclaredField:()=>({setAccessible(){},get:()=>({isEmpty:()=>!chatLines.length,get:i=>chatLines[i]})})}},
   ChatHudExtensionKt:{removeMessage:removeChat},
-  Class:{class:Function},Object:{class:Object},TransferOrigin:{INCOMING:'incoming'},Direction:{values:()=>directions},
+  Class:{...h.types.Class,class:Function},Object:{class:Object},TransferOrigin:{INCOMING:'incoming'},Direction:{values:()=>directions},
   PlayerTeam:{formatNameForTeam:(team,name)=>h.types.Component.literal((team??'')+name.text).withColor(0x5555ff)},
   BedBlock:class{},BedPart:{HEAD:'head'},BlockStateProperties:{HORIZONTAL_FACING:'facing'},Blocks:{},
-  ClientboundBlockDestructionPacket:BreakPacket,ClientboundBlockUpdatePacket:BlockPacket,ClientboundSectionBlocksUpdatePacket:ChunkPacket,ClientboundMoveEntityPacket:MovePacket,ClientboundSwingAnimationPacket:SwingPacket,
+  ClientboundBlockDestructionPacket:BreakPacket,ClientboundBlockUpdatePacket:BlockPacket,ClientboundSectionBlocksUpdatePacket:ChunkPacket,ClientboundMoveEntityPacket:MovePacket,ClientboundSwingAnimationPacket:SwingPacket,ClientboundAddEntityPacket:SpawnPacket,EntityType:{ITEM:'item'},
  });
  function removeChat(_chat,id){for(let i=chatLines.length-1;i>=0;i--)if(chatLines[i].id===id)chatLines.splice(i,1);}
  const connection=h.mc.getConnection();
- Object.assign(h.mc.player,{getX:()=>0,getY:()=>64,getEyeY:()=>65.6,getZ:()=>30,getMainHandItem:()=>emptyHand,getOffhandItem:()=>emptyHand,isRemoved:()=>false,
+ Object.assign(h.mc.player,{getX:()=>0,getY:()=>64,getEyeY:()=>65.6,getXRot:()=>0,getYRot:()=>0,getZ:()=>30,getMainHandItem:()=>emptyHand,getOffhandItem:()=>emptyHand,isRemoved:()=>false,
   getName:()=>h.types.Component.literal('LocalPlayer'),getBoundingBox:()=>box,getLastDamageSource:()=>damageSource});
  Object.assign(h.mc,{getCameraEntity:()=>camera,setCameraEntity:entity=>{camera=entity;}});
  h.mc.gui.hud={getChat:()=>chatLines};
@@ -214,7 +223,7 @@ function antiCheatHost() {
   getListedOnlinePlayers:()=>({iterator:()=>listIterator(listed)})};
  h.mc.getConnection=()=>packetListener;
  Object.assign(h.mc.level,{
-  getEntitiesOfClass:(Class, bounds)=>{assert.equal(Class,Projectile);assert(bounds);projectileCounters.queries++;return{iterator:()=>listIterator(projectiles)};},
+  getEntitiesOfClass:(Class, bounds)=>{if(Class===ItemEntity){dropCounters.queries++;return{iterator:()=>listIterator(droppedItems)};}assert.equal(Class,Projectile);assert(bounds);projectileCounters.queries++;return{iterator:()=>listIterator(projectiles)};},
   players:()=>{const list=loaded?[h.mc.player,e]:[h.mc.player];return{iterator:()=>({hasNext:()=>!!list.length,next:()=>list.shift()})};},
   hasChunkAt:()=>true,hasChunksAt:()=>true,noCollision:()=>terrain!=='obstruction',containsAnyLiquid:()=>false,getEntity:id=>id===42?e:null,
   getBlockState:pos=>{
@@ -229,8 +238,8 @@ function antiCheatHost() {
  const draw=()=>{h.draws.length=0;h.emit('OverlayRenderEvent',{getTickDelta:()=>.5,getContext:()=>h.ctx});return h.draws;};
  const place=(x,z,y=63)=>h.emit('BlockChangeEvent',{getBlockPos:()=>point(x,y,z),getNewState:()=>({isSolidRender:()=>true,getBlock:()=>ordinaryBlock})});
  const packet=(Type,values,origin='incoming',isCancelled=()=>false)=>h.emit('PacketEvent',{getOrigin:()=>origin,getPacket:()=>new Type(values),isCancelled});
- return {...h,get hooks(){return h.hooks;},points,flight,chat,chatLines,listed,addTabEntry,packetListener,placed,tick,draw,place,packet,point,blocks,directions,BreakPacket,BlockPacket,ChunkPacket,MovePacket,SwingPacket,
-  projectiles,projectileCounters,Projectile,Arrow,Throwable,Trident,WindCharge,Items,setDamage:value=>damageSource=value,
+ return {...h,get hooks(){return h.hooks;},points,flight,chat,chatLines,listed,addTabEntry,packetListener,placed,tick,draw,place,packet,point,blocks,directions,BreakPacket,BlockPacket,ChunkPacket,MovePacket,SwingPacket,SpawnPacket,
+  droppedItems,dropCounters,ItemEntity,projectiles,projectileCounters,Projectile,Arrow,Throwable,Trident,WindCharge,Items,setDamage:value=>damageSource=value,
   antiCheat:h.modules.get('Anti-cheat'),setLoaded:value=>{loaded=value;},setTerrain:value=>{terrain=value;}};
 }
 
@@ -585,7 +594,7 @@ test('watch links switch and restore the camera, keep one exit at the bottom, an
 
 test('Anti-cheat settings separate check VL, debounce flags, and apply the extra VL threshold',()=>{
  const h=antiCheatHost(), settings=h.antiCheat.controls;
- assert.deepEqual(Object.keys(settings).filter(key=>!['extraVl','flagInterval','alertVl','resetVl','resetSeconds'].includes(key)&&!key.includes('Settings')),['AutoBlock','LegitScaffold','Scaffold','ScaffoldBPS','TellyScaffold','NoSlow','Nuker','BedNuker','AirHover','GroundSpeed','AimAssist','AutoClicker','Blink','FastMine','NoFall','Protocol','AutoThrow','AutoBow']);
+ assert.deepEqual(Object.keys(settings).filter(key=>!['extraVl','flagInterval','alertVl','resetVl','resetSeconds'].includes(key)&&!key.includes('Settings')),['AutoBlock','LegitScaffold','Scaffold','ScaffoldBPS','TellyScaffold','NoSlow','Nuker','BedNuker','AirHover','GroundSpeed','AimAssist','AutoClicker','Blink','FastMine','NoFall','Protocol','AutoThrow','AutoBow','InventoryDrop']);
  assert(settings.AimAssist.get() && settings.AutoClicker.get());
  for(const name of ['Blink','FastMine','NoFall','Protocol'])assert.equal(settings[name].get(),false);
  settings.extraVl.set(3);settings.Protocol.set(true);
@@ -871,4 +880,143 @@ test('friend pill follows the host friend list without changing protected names'
  h.emit('OverlayRenderEvent',overlay);
  assert.deepEqual(h.draws.filter(draw=>draw[0]==='text').map(draw=>draw[2].text),['♥','20','ProtectedName','65m']);
  h.events.disable();
+});
+
+function inventoryHost(){
+ const h=antiCheatHost(), controls=h.antiCheat.controls;
+ for(const setting of Object.values(controls))if(typeof setting.get()==='boolean')setting.set(false);
+ controls.InventoryDrop.set(true);controls.alertVl.set(1000);controls.flagInterval.set(0);controls.InventoryDropSettingsFlagIntervalSeconds.set(0);
+ h.antiCheat.setEnabled(true);h.tick(26);
+ return h;
+}
+let dropSequence=0;
+function dropPacket(h,options={}){
+ const uuid=options.uuid??'drop-'+(++dropSequence), velocity=options.velocity??[0,.1,.3];
+ h.packet(h.SpawnPacket,{getType:()=>options.type??'item',getUUID:()=>uuid,getId:()=>1000+dropSequence,
+  getX:()=>options.x??h.points.x,getY:()=>options.y??h.points.y+1.3,getZ:()=>options.z??h.points.z,
+  getMovement:()=>h.point(...velocity)});
+ return uuid;
+}
+function ownedDrop(h,options={}){
+ const item=Object.assign(new h.ItemEntity(),{tickCount:options.age??0,isAlive:()=>true,
+  getUUID:()=>options.uuid??'owned-'+(++dropSequence),getItem:()=>({isEmpty:()=>false,getCount:()=>options.count??64}),
+  getOwner:()=>options.owner===undefined?h.entity:options.owner,distanceToSqr:()=>options.distance??1});
+ h.droppedItems.push(item);return item;
+}
+test('Inventory Drop flags only above five distinct discard actions in five seconds, not stack size',()=>{
+ const h=inventoryHost();
+ for(let i=0;i<5;i++){dropPacket(h);h.tick(2);}
+ assert(!h.chat.length,'exactly five drops must not flag');
+ dropPacket(h);h.tick(2);
+ assert.equal(h.chat.length,1);assert.match(h.chat[0].text,/Inventory Drop \(vl:1.0\).*6 drops \/ 5s \(estimated source\)/);
+ h.tick(30);assert.equal(h.chat.length,1,'no new drops must not repeat the flag');
+ h.events.disable();
+});
+test('Inventory Drop uses thrower data when present, counts full stacks once and deduplicates spawn packets',()=>{
+ const h=inventoryHost();
+ for(let i=0;i<5;i++){const uuid='owned-action-'+i;ownedDrop(h,{uuid,count:64});dropPacket(h,{uuid});h.tick(2);}
+ assert(!h.chat.length);
+ const sixth=ownedDrop(h,{uuid:'owned-action-six'});h.tick(2);
+ assert.equal(h.chat.length,1);assert.match(h.chat[0].text,/6 drops \/ 5s/);
+ h.tick(20);assert.equal(h.chat.length,1);sixth.tickCount=30;
+ h.events.disable();
+});
+test('Inventory Drop expires its window and independently respects per-check settings and disable',()=>{
+ const h=inventoryHost(), controls=h.antiCheat.controls;
+ for(let i=0;i<5;i++){dropPacket(h);h.tick(2);}
+ h.tick(100);dropPacket(h);h.tick(2);assert(!h.chat.length,'expired drops must not carry across windows');
+ controls.InventoryDropSettingsWindowSeconds.set(2);controls.InventoryDropSettingsMaxDrops.set(2);controls.InventoryDropSettingsVL.set(3);
+ dropPacket(h);h.tick(2);dropPacket(h);h.tick(2);
+ assert.match(h.chat.at(-1).text,/Inventory Drop \(vl:3.0\).*3 drops \/ 2s/);
+ const before=h.chat.length, queries=h.dropCounters.queries;
+ controls.InventoryDrop.set(false);for(let i=0;i<10;i++){dropPacket(h);h.tick(2);}
+ assert.equal(h.chat.length,before);assert.equal(h.dropCounters.queries,queries);
+ h.events.disable();
+});
+test('Inventory Drop rejects wrong origins, random velocity, local drops, stale packets and duplicate UUIDs',()=>{
+ const h=inventoryHost();
+ for(let i=0;i<10;i++){
+  dropPacket(h,{y:h.points.y+.2});dropPacket(h,{velocity:[.25,.2,-.2]});
+  dropPacket(h,{x:10});dropPacket(h,{velocity:[0,0,0]});
+  dropPacket(h,{x:0,y:65.3,z:30});h.tick(2);
+ }
+ assert(!h.chat.length);
+ for(let i=0;i<10;i++)dropPacket(h,{uuid:'same-uuid'});
+ h.tick(2);assert(!h.chat.length,'one entity must not be ten drops');
+ for(let i=0;i<10;i++)dropPacket(h);h.advance(500);h.tick();
+ assert(!h.chat.length,'a late packet queue must not manufacture a discard burst');
+ h.events.disable();
+});
+test('Inventory Drop rejects overlapping players, death drops and loot from a recently broken block',()=>{
+ const h=inventoryHost();
+ const other={...h.entity,getUUID:()=> 'overlapping',getId:()=>43};
+ h.mc.level.players=()=>{const players=[h.mc.player,h.entity,other];return{iterator:()=>({hasNext:()=>players.length>0,next:()=>players.shift()})};};
+ h.tick(26);for(let i=0;i<8;i++){dropPacket(h);h.tick(2);}assert(!h.chat.length,'ambiguous source must not be guessed');
+ h.mc.level.players=()=>{const players=[h.mc.player,h.entity];return{iterator:()=>({hasNext:()=>players.length>0,next:()=>players.shift()})};};
+ h.entity.isAlive=()=>false;h.tick();for(let i=0;i<8;i++){dropPacket(h);h.tick(2);}assert(!h.chat.length);
+ h.entity.isAlive=()=>true;h.tick(26);
+ for(let i=0;i<8;i++){
+  dropPacket(h);
+  h.packet(h.BlockPacket,{getBlockState:()=>({isAir:()=>true}),getPos:()=>h.point(h.points.x,h.points.y+1,h.points.z)});
+  h.tick(2);
+ }
+ assert(!h.chat.length,'block drops processed in the same packet batch must be excluded');
+ h.events.disable();
+});
+test('render distances clamp malformed preferences and name labels update without rebuilding stable widths',()=>{
+ assert.equal(core.renderDistance(64),64);assert.equal(core.renderDistance(3),8);assert.equal(core.renderDistance(900),256);
+ for(const bad of [null,undefined,'30',NaN,Infinity])assert.equal(core.renderDistance(bad),128);
+ const h=host();h.store.set('opai.preferences',JSON.stringify({nametagDistance:32}));h.events.enable();h.emit('GameTickEvent',{});
+ const draw=()=>h.emit('OverlayRenderEvent',{getTickDelta:()=>.5,getContext:()=>h.ctx});draw();assert(!h.draws.length);
+ h.store.set('opai.preferences',JSON.stringify({nametagDistance:70}));h.advance(300);h.emit('GameTickEvent',{});draw();assert(h.draws.length);
+ const nameWidth=h.counters.widths;
+ h.entity.position=()=>({distanceToSqr:()=>64*64});h.emit('GameTickEvent',{});draw();
+ assert.equal(h.counters.widths-nameWidth,2,'only the heart metrics and changed distance need measurement');
+ h.events.disable();
+});
+
+function bedHost(){
+ const h=host();let enabled=true,distance=20,fail=false;
+ const native=h.nativeBeds, original={handler:'native-beds',priority:0,callback(){}}, covered=new Set();
+ function point(x,y,z){return {getX:()=>x,getY:()=>y,getZ:()=>z,relative:d=>point(x+d.dx,y+d.dy,z+d.dz),equals:o=>!!o&&x===o.getX()&&y===o.getY()&&z===o.getZ()};}
+ const list=values=>({isEmpty:()=>!values.length,iterator(){let i=0;return{hasNext:()=>i<values.length,next:()=>values[i++]};}});
+ const directions=[{dx:1,dy:0,dz:0},{dx:-1,dy:0,dz:0},{dx:0,dy:1,dz:0},{dx:0,dy:-1,dz:0},{dx:0,dy:0,dz:1},{dx:0,dy:0,dz:-1}];
+ for(const d of directions)d.getOpposite=()=>directions.find(o=>o.dx===-d.dx&&o.dy===-d.dy&&o.dz===-d.dz);
+ h.types.Direction.values=()=>directions;h.types.BedBlock.PART='part';
+ const head=point(0,64,0),foot=point(-1,64,0),bedBlock=new h.types.BedBlock();
+ const stateAt=pos=>{const bed=pos.equals(head)||pos.equals(foot);return {getBlock:()=>bed?bedBlock:null,getValue:key=>key==='part'?(pos.equals(head)?'head':'foot'):directions[0],isCollisionShapeFullBlock:()=>covered.has(`${pos.getX()},${pos.getY()},${pos.getZ()}`)};};
+ const position={distanceToSqr:()=>distance*distance,add(){return this;}};
+ const entries=[], block={asItem:()=>({getDefaultInstance:()=>({isEmpty:()=>false,id:'wool'})})};
+ const bed={trackedBlockPos:()=>head,block:()=>bedBlock,pos:()=>position,surroundingBlocks:()=>list(entries)};
+ native.getEnabled=()=>enabled;native.renderHandler=original;native.beds=list([{bedState:bed,surrounding:list(entries)}]);
+ native.ignoreSelfBed={getActiveMode:()=>({isSelfBed:()=>false})};native.scale={transform:()=>1};
+ native.getIgnoreAdjacent=()=>true;native.getRenderOffset=()=>position;native.getMaxCount=()=>8;
+ h.mc.level.getBlockState=stateAt;h.mc.level.hasChunkAt=()=>true;
+ h.ctx.item=(stack,x,y)=>{if(fail)throw Error('item fixture failure');h.draws.push(['item',stack,x,y]);};
+ h.types.EventManager.INSTANCE.registerEventHook('OverlayRenderEvent',original);
+ h.store.set('opai.bridge.features',JSON.stringify({protocol:1,nametags:false}));
+ h.events.enable();
+ const tick=()=>{h.advance(250);h.emit('GameTickEvent',{});};
+ const draw=()=>{h.draws.length=0;h.emit('OverlayRenderEvent',{getTickDelta:()=>.5,getContext:()=>h.ctx});return h.draws;};
+ return {...h,get hooks(){return h.hooks;},tick,draw,original,covered,entries,block,head,foot,directions,
+  setEnabled:value=>enabled=value,setDistance:value=>distance=value,setFailure:value=>fail=value};
+}
+test('BedPlates draws only a rounded card with a horizontal item row and protection status',()=>{
+ const h=bedHost();h.tick();h.draw();
+ assert.deepEqual(h.draws.filter(draw=>draw[0]==='text').map(draw=>draw[2].text),['Not Protected']);
+ assert.equal(h.draws.filter(draw=>draw[0]==='item').length,0);assert.equal(h.draws.filter(draw=>draw[0]==='rounded').length,1);
+ h.entries.push({block:()=>h.block},{block:()=>h.block});h.covered.add('0,65,0');h.tick();h.draw();
+ assert.deepEqual(h.draws.filter(draw=>draw[0]==='text').map(draw=>draw[2].text),['Not Full Protected']);
+ assert.equal(h.draws.filter(draw=>draw[0]==='item').length,1,'same block type is rendered once, without count/layer text');
+ for(const center of [h.head,h.foot])for(const d of h.directions){const next=center.relative(d);if(next.getY()>=center.getY()&&!next.equals(h.head)&&!next.equals(h.foot))h.covered.add(`${next.getX()},${next.getY()},${next.getZ()}`);}
+ h.tick();h.draw();assert.deepEqual(h.draws.filter(draw=>draw[0]==='text').map(draw=>draw[2].text),['Fully Protected']);
+ h.events.disable();assert(h.hooks.some(entry=>entry.hook===h.original));
+});
+test('BedPlates respects its distance slider and disabled module and restores the native hook on failure',()=>{
+ const h=bedHost();h.store.set('opai.preferences',JSON.stringify({bedDistance:16}));h.tick();assert.equal(h.draw().length,0);
+ h.store.set('opai.preferences',JSON.stringify({bedDistance:32}));h.tick();assert(h.draw().length>0);
+ h.setEnabled(false);h.tick();assert.equal(h.draw().length,0);assert(h.hooks.some(entry=>entry.hook===h.original));
+ h.setEnabled(true);h.entries.push({block:()=>h.block});h.setFailure(true);h.tick();h.draw();
+ assert(h.hooks.some(entry=>entry.hook===h.original));assert(h.messages.some(message=>String(message).includes('item fixture failure')));
+ h.events.disable();assert.equal(h.hooks.filter(entry=>entry.hook===h.original).length,1);
 });

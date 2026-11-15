@@ -1169,6 +1169,67 @@
         }
       ],
       "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Inventory Drop",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 15.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 5.0
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 40
+          },
+          "suffix": "",
+          "name": "Max Drops",
+          "valueType": "INT",
+          "value": 5
+        },
+        {
+          "range": {
+            "from": 0.25,
+            "to": 1.25
+          },
+          "suffix": "",
+          "name": "Source Radius",
+          "valueType": "FLOAT",
+          "value": 0.65
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
     }
   ],
   "valueType": "CONFIGURABLE"

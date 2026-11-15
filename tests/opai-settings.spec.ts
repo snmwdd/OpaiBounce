@@ -379,3 +379,53 @@ test('the ClickGUI search capsule expands upward, locates a module and can be hi
     await expect(trigger).toHaveCount(0);
     expect(api.errors).toEqual([]);
 });
+
+test('IDK Target HUD persists, uses a square portrait and a centered percentage bar without armor text', async ({page}) => {
+    const shared: Record<string,string> = {};
+    const api = await setup(page,false,shared);
+    await page.goto('/#/clickgui?static&preview');await openOpai(page);
+    await page.getByRole('button',{name:'Target HUD',exact:true}).click();
+    await page.getByRole('button',{name:'IDK',exact:true}).click();
+    await expect.poll(()=>JSON.parse(shared['opai.preferences'] ?? '{}').targetHudStyle).toBe('idk');
+    await page.goto('/#/hud?static&preview');await page.reload();
+    await page.evaluate(()=>document.fonts.ready);
+    await expect(page.locator('.hud .island')).toBeVisible();
+    const target={username:'071106153769',uuid:'idk-target',actualHealth:16.12,maxHealth:20,armorItems:[{identifier:'minecraft:diamond_helmet',count:1}]};
+    api.emit('targetChange',{target});
+    const hud=page.locator('.targethud');
+    await expect(hud).toHaveAttribute('data-style','idk');
+    await expect(hud).toHaveCSS('width','152px');await expect(hud).toHaveCSS('height','44px');
+    await expect(hud.locator('.head')).toHaveCSS('width','38px');await expect(hud.locator('.head')).toHaveCSS('border-radius','0px');
+    await expect(hud.locator('.name').getByRole('img',{name:target.username,exact:true})).toBeVisible();
+    await expect(hud.getByRole('progressbar',{name:'Target health'})).toHaveAttribute('aria-valuenow','80.6');
+    await expect(hud.locator('.percentage').getByRole('img',{name:'80.6%',exact:true})).toBeVisible();
+    await expect(hud.getByLabel('Target armor')).toHaveCount(0);await expect(hud.getByLabel('Target status')).toHaveCount(0);
+    const bar=await hud.locator('.track').boundingBox(), portrait=await hud.locator('.portrait').boundingBox();
+    expect(bar!.x).toBeGreaterThan(portrait!.x+portrait!.width);
+    await hud.screenshot({path:'reports/idk-targethud.png'});
+    api.emit('targetChange',{target:{...target,actualHealth:-5}});
+    await expect(hud.getByRole('progressbar')).toHaveAttribute('aria-valuenow','0');
+    api.emit('targetChange',{target:{...target,actualHealth:100}});
+    await expect(hud.getByRole('progressbar')).toHaveAttribute('aria-valuenow','100');
+    expect(api.errors).toEqual([]);
+});
+
+test('Nametag and Bed distance sliders save independently and survive reload', async ({page}) => {
+    const shared: Record<string,string> = {};
+    const api = await setup(page,false,shared);
+    await page.goto('/#/clickgui?static&preview');await openOpai(page);
+    const names=page.getByRole('spinbutton',{name:'Nametag Distance value',exact:true});
+    const beds=page.getByRole('spinbutton',{name:'Bed Distance value',exact:true});
+    await expect(names).toHaveValue('128');await expect(beds).toHaveValue('128');
+    await names.fill('48');await names.press('Tab');
+    await expect.poll(()=>JSON.parse(shared['opai.preferences'] ?? '{}').nametagDistance).toBe(48);
+    const slider=page.getByRole('slider',{name:'Bed Distance',exact:true});
+    await slider.fill('72');await slider.dispatchEvent('change');
+    await expect.poll(()=>JSON.parse(shared['opai.preferences'] ?? '{}').bedDistance).toBe(72);
+    await page.reload();await openOpai(page);
+    await expect(names).toHaveValue('48');await expect(beds).toHaveValue('72');
+    await names.fill('999');await names.press('Tab');
+    await expect.poll(()=>JSON.parse(shared['opai.preferences'] ?? '{}').nametagDistance).toBe(256);
+    expect(JSON.parse(shared['opai.preferences'] ?? '{}').bedDistance).toBe(72);
+    expect(api.errors).toEqual([]);
+});

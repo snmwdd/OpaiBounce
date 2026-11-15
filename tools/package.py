@@ -23,7 +23,7 @@ def source_files():
     files = [(ROOT / name, name) for name in root_files]
     for folder in folders:
         for path in (ROOT / folder).rglob('*'):
-            if not path.is_file() or path.name == '.DS_Store' or '__pycache__' in path.parts:
+            if not path.is_file() or path.name == '.DS_Store' or path.name.startswith('._') or '__pycache__' in path.parts:
                 continue
             if path.suffix in {'.pyc', '.jar', '.zip', '.log', '.tap'}:
                 continue
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     output.mkdir(exist_ok=True)
     install = output / f'OpaiBounce-{version}.zip'
     source = output / f'OpaiBounce-{version}-Source.zip'
-    files = [(path, 'themes/opai/' + path.relative_to(ROOT / 'build/theme').as_posix()) for path in (ROOT / 'build/theme').rglob('*') if path.is_file()]
+    files = [(path, 'themes/opai/' + path.relative_to(ROOT / 'build/theme').as_posix()) for path in (ROOT / 'build/theme').rglob('*') if path.is_file() and path.name != '.DS_Store' and not path.name.startswith('._')]
     files += [(ROOT / 'script/OpaiBounceScript.js', 'scripts/OpaiBounceScript.js')]
     files += [(ROOT / name, name) for name in ['README.md', 'LICENSE', 'LICENSE-OPAI-SHELL', 'NOTICE.md']]
     files += [(ROOT / name, 'themes/opai/' + name) for name in ['LICENSE', 'LICENSE-OPAI-SHELL', 'NOTICE.md']]

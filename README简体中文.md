@@ -1,6 +1,6 @@
 # OpaiBounce
 
-为 LiquidBounce 制作的 Opai 风格主题与配套 LiquidScript。当前主题 **1.1.3**，脚本 **1.10.1**。
+为 LiquidBounce 制作的 Opai 风格主题与配套 LiquidScript。当前主题 **1.1.4**，脚本 **1.10.2**。
 
 # 请必须装备脚本才能正常运行
 https://github.com/snmwdd/OpaiBounce/tree/main/script
@@ -10,7 +10,7 @@ https://github.com/snmwdd/OpaiBounce/tree/main/script
 
 # [更多图片](https://github.com/snmwdd/OpaiBounce/tree/main/images简体中文.md)
 
-在 ClickGUI 的 Configurations → Settings → Opai 可以调整阴影、模糊、灵动岛和目标 HUD 排版、HUD 背景、配置是否恢复按键、独立 Ping，以及 ClickGUI 搜索胶囊。点击左下角的胶囊可搜索模块名和别名，选择结果会定位到模块。独立 Ping 每五秒测量当前多人连接的远端 IP，使用系统 ICMP。服务器不回复时显示 `—`。
+在 ClickGUI 的 Configurations → Settings → Opai 可以调整阴影、模糊、灵动岛和目标 HUD 排版（New / Old / IDK）、Nametag 与床显示的独立距离滑动条（8–256 格）、HUD 背景、配置是否恢复按键、独立 Ping，以及 ClickGUI 搜索胶囊。点击左下角的胶囊可搜索模块名和别名，选择结果会定位到模块。独立 Ping 每五秒测量当前多人连接的远端 IP，使用系统 ICMP。服务器不回复时显示 `—`。
 
 ## 环境
 
@@ -48,7 +48,7 @@ npm run test:browser
 
 ## 安装
 
-从 [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) 下载同版本的主题和脚本，或在当前源码运行 `npm run package` 生成 `release/OpaiBounce-1.1.3.zip`。
+从 [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) 下载同版本的主题和脚本，或在当前源码运行 `npm run package` 生成 `release/OpaiBounce-1.1.4.zip`。
 
 1. 在游戏内执行 `.client theme browse`，将安装包 `themes/opai` 中的整个 `opai` 文件夹放入打开的主题目录。
 2. 安装 LiquidBounce 官方 Script API 扩展。执行 `.script browse`，将安装包 `scripts/OpaiBounceScript.js` 放入脚本目录，只保留一份该脚本。
@@ -75,3 +75,9 @@ npm run test:browser
 GD 音乐台（music.gdstudio.xyz）的服务条款与代码许可独立，原提供方声明为非商业学习使用。Minecraft 版本图片、字体及其他第三方素材保留各自权利与来源，不因本仓库的 GPL 声明而被重新授权。
 
 这是非官方主题移植，与上述上游项目无隶属关系。
+
+## 新增显示与检查
+
+- `IDK` 目标 HUD 使用方形头像、像素文字、居中的血量百分比和浅紫色血条；New、Old 保持原有布局。
+- 原生 `BedPlates` 开启后，床保护改为圆角卡片、横向方块图标与底部保护状态；无保护时仅显示 `Not Protected`。第一层的顶部和侧面完整覆盖时显示 `Fully Protected`，地板不算保护层。
+- `Inventory Drop` 在 5 秒内超过 5 次丢弃后累计 VL。整组物品只算一次，窗口、次数、来源半径、告警间隔和 VL 都可单独调整。没有归属信息时，通过出生位置、初速度和近期玩家位置推断来源，并排除重复实体、多人重叠与近期方块掉落；推断提示标注 `estimated source`。正常快速清背包也可能触发，不能据此确定作弊或知道对方是否打开背包。

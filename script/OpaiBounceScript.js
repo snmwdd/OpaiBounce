@@ -4,7 +4,7 @@
 // Screen heartbeats keep telemetry and preview alive while the singleplayer world is paused.
 (function () {
     'use strict';
-    const VERSION = '1.10.1', PREFIX = 'opai.bridge.';
+    const VERSION = '1.10.2', PREFIX = 'opai.bridge.';
     function decode(value) { try { return value == null ? null : JSON.parse(String(value)); } catch (_) { return null; } }
     function previewRequest(value, now, width, height) {
         const data = decode(value), r = data && data.rect;
@@ -14,27 +14,48 @@
         const x=Math.max(0,r.x*sx),y=Math.max(0,r.y*sy),right=Math.min(width,(r.x+r.width)*sx),bottom=Math.min(height,(r.y+r.height)*sy);
         return right-x>=20 && bottom-y>=40 ? {...data,rect:{x,y,width:right-x,height:bottom-y},options:data.options||{}} : null;
     }
+    function renderDistance(value) { return typeof value === 'number' && Number.isFinite(value) ? Math.round(Math.max(8, Math.min(256, value))) : 128; }
+    // Position and initial velocity jointly identify a source. This is heuristic evidence,
+    // not proof of an open inventory or of cheating. Ambiguous player overlaps are rejected.
+    function dropSource(spawn,sources,radius=.65) {
+        if (![spawn.x,spawn.y,spawn.z,spawn.vx,spawn.vy,spawn.vz,spawn.at].every(Number.isFinite)) return null;
+        const speed=Math.hypot(spawn.vx,spawn.vy,spawn.vz);
+        if (speed<.06 || speed>.55) return null;
+        const matches=[];
+        for (const source of sources) {
+            const matched=source.samples.some(sample=>{
+                if (Math.abs(sample.at-spawn.at)>200) return false;
+                if (Math.hypot(spawn.x-sample.x,spawn.z-sample.z)>radius || Math.abs(spawn.y-sample.y)>.35) return false;
+                const pitch=sample.pitch*Math.PI/180,yaw=sample.yaw*Math.PI/180;
+                const vx=-Math.sin(yaw)*Math.cos(pitch)*.3, vz=Math.cos(yaw)*Math.cos(pitch)*.3;
+                const vy=-Math.sin(pitch)*.3+.1;
+                return Math.hypot(spawn.vx-vx,spawn.vz-vz)<=.065 && Math.abs(spawn.vy-vy)<=.115;
+            });
+            if (matched) matches.push(source);
+        }
+        return matches.length===1 && matches[0].eligible ? matches[0].uuid : null;
+    }
     function healthColor(health) { return health>=14?0x80d900:health>=8?0xffc83d:0xff615b; }
     const VL_BASELINE = 10, SCAFFOLD_WINDOW = 2000;
     const CHECK_DEFAULTS = {
         AutoBlock:true, LegitScaffold:true, Scaffold:true, ScaffoldBPS:true, TellyScaffold:true, NoSlow:true, Nuker:true, BedNuker:true,
         AirHover:true, GroundSpeed:true, AimAssist:true, AutoClicker:true, Blink:false, FastMine:false, NoFall:false, Protocol:false,
-        AutoThrow:true, AutoBow:true,
+        AutoThrow:true, AutoBow:true, InventoryDrop:true,
     };
     const CHECK_LABELS = {
         AutoBlock:'Auto Block', 'Legit Scaffold':'Eagle', AimAssist:'Aim Assist', AutoClicker:'Auto Clicker',
         NoSlow:'No Slow', FastMine:'Fast Mine', NoFall:'No Fall',
-        AutoThrow:'Auto Throw', AutoBow:'Auto Bow',
+        AutoThrow:'Auto Throw', AutoBow:'Auto Bow', InventoryDrop:'Inventory Drop',
     };
     const CHECK_NAMES = {
         AutoBlock:'Auto Block', LegitScaffold:'Eagle', Scaffold:'Scaffold', ScaffoldBPS:'Scaffold BPS',
         TellyScaffold:'Telly Scaffold', NoSlow:'No Slow', Nuker:'Nuker', BedNuker:'Bed Nuker',
         AirHover:'Air Hover', GroundSpeed:'Ground Speed', AimAssist:'Aim Assist', AutoClicker:'Auto Clicker',
         Blink:'Blink', FastMine:'Fast Mine', NoFall:'No Fall', Protocol:'Protocol',
-        AutoThrow:'Auto Throw', AutoBow:'Auto Bow',
+        AutoThrow:'Auto Throw', AutoBow:'Auto Bow', InventoryDrop:'Inventory Drop',
     };
     const PARAMETER_NAMES = {
-        FlagIntervalSeconds:'Flag Interval (s)', VL:'VL per Flag', WindowSeconds:'Time Window (s)',
+        FlagIntervalSeconds:'Flag Interval (s)', VL:'VL per Flag', WindowSeconds:'Time Window (s)', MaxDrops:'Max Drops',
         BlockTimeSeconds:'Block Time (s)', HoldSeconds:'Hold Time (s)', LockSeconds:'Lock Time (s)',
         WaitSeconds:'Wait Time (s)', JumpTimeSeconds:'Jump Time (s)', BlockRatio:'Blocking Ratio',
         LockRatio:'Lock Ratio', MaxBPS:'Max BPS', MaxCPS:'Max CPS', MaxRate:'Max per Second',
@@ -64,6 +85,7 @@
         AutoThrow:{WindowSeconds:[2.5,1,8],MinThrows:[6,3,30],MaxRate:[3,1,15],LockSeconds:[.6,.2,2],
             AimAngle:[12,3,30],LockRatio:[.8,.5,1],Range:[40,8,96]},
         AutoBow:{WindowSeconds:[4,2,10],MinArrows:[5,3,30],MaxRate:[1.5,.5,8],MinDistance:[8,3,48],Range:[48,12,96],TargetRadius:[6,2,12]},
+        InventoryDrop:{WindowSeconds:[5,1,15],MaxDrops:[5,1,40],SourceRadius:[.65,.25,1.25]},
     };
     const checkOptions = Object.fromEntries(Object.entries(CHECK_RULES).map(([name, fields]) => [name,
         Object.fromEntries([...Object.entries(fields).map(([key, rule]) => [key, rule[0]]), ['FlagIntervalSeconds',.75], ['VL',1]])]));
@@ -125,7 +147,7 @@
         state.bowHeldAt = null;
     }
     // Keep the validation functions usable by the standalone Node regression harness.
-    if (typeof registerScript !== 'function') { if(typeof module!=='undefined')module.exports={decode,previewRequest,healthColor}; return; }
+    if (typeof registerScript !== 'function') { if(typeof module!=='undefined')module.exports={decode,previewRequest,healthColor,renderDistance,dropSource}; return; }
     const script=registerScript({name:'OpaiBridge',version:VERSION,authors:['Opai theme contributors']});
     const type=name=>Java.type(name), client=mc;
     const EventManager=type('net.ccbluex.liquidbounce.event.EventManager').INSTANCE;
@@ -157,6 +179,7 @@
     let active=false,owner=null,hooks=[],originalHook=null,tookTags=false,originalEnabled=false,changedByUser=false,changing=false;
     let lastPublish=0,lastPreviewError=0,records=[],request=null,features={serverInfo:true,nametags:true,preview:true};
     let errors=[],tagFailed=false,previewFailed=false;
+    let nametagDistance=128, bedDistance=128;
     // Both host signatures exist in released builds; resolve once, not per primitive.
     let roundedArity=9;
     try { for (const method of Graphics.class.getMethods()) if(String(method.getName())==='drawRoundedRect'&&[9,10].includes(method.getParameterCount())) roundedArity=method.getParameterCount(); } catch (_) {}
@@ -178,6 +201,8 @@
     let suspectNames = {};
     let projectileTypes = null, projectileWorld = null, projectilePollAt = 0;
     const seenProjectiles = new Map();
+    let droppedItemType=null, dropWorld=null, dropPollAt=0;
+    const seenDrops=new Map(), dropClaims=new Map(), recentLootBlocks=[];
     const markedTabEntries=new Map();
     const flagListeners=new Set(), miningAnimations=new Map(), breakEvidence=new Map(), ambiguousBreaks=new Map();
     const flagHistory=[];
@@ -247,7 +272,7 @@
         for (const [check, fields] of Object.entries(CHECK_RULES)) {
             const rules = {...fields, FlagIntervalSeconds:[.75,0,30], VL:[1,1,10]};
             for (const [key, [value, min, max]] of Object.entries(rules)) {
-                const integer = /^(MinSwings|MinCycles|MinBlocks|MinJumps|MinBreaks|MinSnaps|MinBursts|MinThrows|MinArrows|SmoothTicks|TimingMs|MaxBreakMs|VL)$/.test(key);
+                const integer = /^(MinSwings|MinCycles|MinBlocks|MinJumps|MinBreaks|MinSnaps|MinBursts|MinThrows|MinArrows|MaxDrops|SmoothTicks|TimingMs|MaxBreakMs|VL)$/.test(key);
                 const builder = integer ? 'int' : 'float';
                 const name = check+'Settings'+key;
                 const setting = Setting[builder]({name, default:value, range:[min,max]}).notAnOption();
@@ -300,6 +325,7 @@
         suspectMarks = new Set();
         suspectNames = {};
         seenProjectiles.clear();
+        seenDrops.clear();dropClaims.clear();recentLootBlocks.length=0;dropWorld=null;dropPollAt=0;
         projectileWorld = null;
         projectilePollAt = 0;
         remoteBlockUpdates.clear();
@@ -430,6 +456,8 @@
             chunkPacket: type('net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket'),
             movePacket: type('net.minecraft.network.protocol.game.ClientboundMoveEntityPacket'),
             swingPacket: type('net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket'),
+            spawnPacket: type('net.minecraft.network.protocol.game.ClientboundAddEntityPacket'),
+            itemType: type('net.minecraft.world.entity.EntityType').ITEM,
             incoming: type('net.ccbluex.liquidbounce.event.events.TransferOrigin').INCOMING,
             watchMetadata: new Metadata(false, watchMessageId, true, 1),
         };
@@ -790,7 +818,7 @@
         const event = type('net.ccbluex.liquidbounce.event.events.PacketEvent');
         const Inbox = musicLoader.loadClass('opai.bridge.PacketInbox');
         const Class = type('java.lang.Class'), ObjectType = type('java.lang.Object'), types = antiCheatTypes;
-        const packets = Java.to([types.breakPacket.class,types.blockPacket.class,types.chunkPacket.class,types.movePacket.class,types.swingPacket.class], 'java.lang.Class[]');
+        const packets = Java.to([types.breakPacket.class,types.blockPacket.class,types.chunkPacket.class,types.movePacket.class,types.swingPacket.class,types.spawnPacket.class], 'java.lang.Class[]');
         const inbox = Inbox.getConstructor(Class.class,ObjectType.class,packets.getClass()).newInstance(event.class,types.incoming,packets);
         pendingAntiCheatPackets = inbox;
         antiCheatPacketHook = registerHook(event, -30_000, inbox, antiCheatModule);
@@ -799,10 +827,15 @@
     function processAntiCheatPackets(level, timestamp) {
         const types = antiCheatTypes;
         let received;
+        const spawnedDrops=[];
         while ((received = pendingAntiCheatPackets.poll()) != null) {
             const event = received.event();
             if (event.isCancelled()) continue;
             const packet = event.getPacket();
+            if (packet instanceof types.spawnPacket) {
+                if (enabledCheck('Inventory Drop') && packet.getType()===types.itemType) spawnedDrops.push({packet,at:Number(received.at())});
+                continue;
+            }
             if (packet instanceof types.swingPacket) {
                 const entity = level.getEntity(packet.entityId());
                 const state = entity && antiCheatPlayers.get(String(entity.getUUID()));
@@ -822,11 +855,14 @@
             } else if (packet instanceof types.breakPacket) {
                 trackBreakAnimation(level, packet, timestamp);
             } else if (packet instanceof types.blockPacket) {
-                if (packet.getBlockState().isAir()) sampleBrokenBlock(level, packet.getPos(), timestamp);
-            } else if (enabledCheck('Nuker') || enabledCheck('Bed Nuker') || enabledCheck('FastMine')) {
-                packet.runUpdates((pos, block) => { if (block.isAir()) sampleBrokenBlock(level, pos, timestamp); });
+                if (packet.getBlockState().isAir()) { rememberLootBlock(packet.getPos(),timestamp);sampleBrokenBlock(level, packet.getPos(), timestamp); }
+            } else if (packet instanceof types.chunkPacket) {
+                packet.runUpdates((pos, block) => { if (block.isAir()) {rememberLootBlock(pos,timestamp);sampleBrokenBlock(level, pos, timestamp);} });
             }
         }
+        for (const spawn of spawnedDrops) observeDropSpawn(spawn.packet,spawn.at,timestamp);
+        while (recentLootBlocks.length && timestamp-recentLootBlocks[0].at>400) recentLootBlocks.shift();
+        for (const [uuid,at] of dropClaims) if (timestamp-at>20_000) dropClaims.delete(uuid);
         for (const [key, sample] of breakEvidence) {
             if (timestamp - sample.at > 4500) breakEvidence.delete(key);
         }
@@ -1421,6 +1457,89 @@
         recordProjectile(state,'AutoBow',timestamp,null);
     }
 
+    function sampleDropSource(entity,state,timestamp) {
+        if (!enabledCheck('Inventory Drop')) { state.dropSamples=null;return; }
+        const position=entity.getPositionCodec().getBase();
+        const samples=state.dropSamples ??= [];
+        samples.push({at:timestamp,x:Number(position.x()),y:Number(position.y())+entity.getEyeY()-entity.getY()-.3,
+            z:Number(position.z()),yaw:Number(entity.getYRot()),pitch:Number(entity.getXRot())});
+        while (samples.length>8) samples.shift();
+    }
+    function rememberLootBlock(pos,timestamp) {
+        if (!enabledCheck('Inventory Drop')) return;
+        recentLootBlocks.push({x:pos.getX()+.5,y:pos.getY()+.5,z:pos.getZ()+.5,at:timestamp});
+        if (recentLootBlocks.length>256) recentLootBlocks.shift();
+    }
+    function countInventoryDrop(state,uuid,at,timestamp,estimated) {
+        if (dropClaims.has(uuid)) return;
+        dropClaims.set(uuid,timestamp);
+        const events=state.dropEvents ??= [], windowMs=option('Inventory Drop','WindowSeconds')*1000;
+        while (events.length && at-events[0]>=windowMs) events.shift();
+        events.push(at);
+        if (events.length>128) events.shift();
+        if (events.length>option('Inventory Drop','MaxDrops')) reportViolation(state.entity,state,'Inventory Drop',timestamp,
+            `${events.length} drops / ${windowMs/1000}s`+(estimated ? ' (estimated source)' : ''));
+    }
+    function observeDropSpawn(packet,at,timestamp) {
+        if (timestamp-at<0 || timestamp-at>350) return;
+        const velocity=packet.getMovement();
+        const spawn={x:Number(packet.getX()),y:Number(packet.getY()),z:Number(packet.getZ()),
+            vx:Number(velocity.x()),vy:Number(velocity.y()),vz:Number(velocity.z()),at};
+        if (recentLootBlocks.some(block=>Math.abs(at-block.at)<=400 && Math.hypot(spawn.x-block.x,spawn.y-block.y,spawn.z-block.z)<1.1)) return;
+        const local=client.player;
+        const sources=[{uuid:String(local.getUUID()),eligible:false,samples:[{at:timestamp,x:local.getX(),y:local.getEyeY()-.3,
+            z:local.getZ(),yaw:local.getYRot(),pitch:local.getXRot()}]}];
+        for (const [uuid,state] of antiCheatPlayers) {
+            if (timestamp-state.lastSeen>350) continue;
+            sources.push({uuid,samples:state.dropSamples ?? [],eligible:state.eligible && state.lastSeen===timestamp
+                && timestamp>=state.graceUntil && state.entity.isAlive() && state.entity.getHealth()>0});
+        }
+        const uuid=dropSource(spawn,sources,option('Inventory Drop','SourceRadius'));
+        if (uuid) countInventoryDrop(antiCheatPlayers.get(uuid),String(packet.getUUID()),at,timestamp,true);
+    }
+
+    function tickInventoryDrops(timestamp) {
+        const level=client.level, local=client.player;
+        if (!enabledCheck('Inventory Drop') || !level || !local) {
+            seenDrops.clear();dropWorld=null;
+            for (const state of antiCheatPlayers.values()) state.dropEvents=[];
+            return;
+        }
+        if (timestamp-dropPollAt<100) return;
+        for (const [uuid,at] of dropClaims) if (timestamp-at>20_000) dropClaims.delete(uuid);
+        const seed=dropWorld!==level || timestamp-dropPollAt>350;
+        if (seed) { seenDrops.clear();for (const state of antiCheatPlayers.values()) state.dropEvents=[]; }
+        dropWorld=level;dropPollAt=timestamp;
+        droppedItemType ??= type('net.minecraft.world.entity.item.ItemEntity');
+        const items=level.getEntitiesOfClass(droppedItemType.class,local.getBoundingBox().inflate(96)).iterator();
+        const windowMs=option('Inventory Drop','WindowSeconds')*1000;
+        for (const state of antiCheatPlayers.values()) {
+            const events=state.dropEvents ??= [];
+            while (events.length && timestamp-events[0]>=windowMs) events.shift();
+        }
+        let sampled=0;
+        while (items.hasNext() && sampled++<512) {
+            const item=items.next();
+            // Retained, merged and re-counted stacks are not new discard actions.
+            if (item.tickCount>6 || !item.isAlive() || item.getItem().isEmpty()) continue;
+            const previous=seenDrops.get(item);
+            if (previous) { previous.lastSeen=timestamp;if (previous.counted) continue; }
+            const entry=previous ?? {lastSeen:timestamp,counted:seed};
+            seenDrops.set(item,entry);
+            if (entry.counted) continue;
+            // Prefer explicit throwers when available. Without synchronized owners the
+            // spawn-packet matcher below uses origin plus initial velocity, never nearest alone.
+            const owner=item.getOwner();
+            if (!owner || owner===local) continue;
+            const state=antiCheatPlayers.get(String(owner.getUUID()));
+            if (!state?.eligible || state.entity!==owner || state.lastSeen!==timestamp
+                || timestamp<state.graceUntil || item.distanceToSqr(owner)>9) continue;
+            entry.counted=true;
+            countInventoryDrop(state,String(item.getUUID()),timestamp,timestamp,false);
+        }
+        for (const [item,entry] of seenDrops) if (timestamp-entry.lastSeen>1000) seenDrops.delete(item);
+    }
+
     function tickAntiCheat(timestamp) {
         if (!antiCheatModule?.getEnabled()) return;
         const level = client.level, local = client.player, connection = client.getConnection();
@@ -1469,8 +1588,9 @@
                 clearProjectileEvidence(state);
                 antiCheatPlayers.set(id, state);
             }
-            if (timestamp - state.lastSeen > 350) { clearEvidence(state); clearProjectileEvidence(state); state.combat = null; }
+            if (timestamp - state.lastSeen > 350) { clearEvidence(state); clearProjectileEvidence(state); state.combat = null;state.dropSamples=[];state.dropEvents=[];state.graceUntil=timestamp+1000; }
             state.lastSeen = timestamp;
+            sampleDropSource(entity,state,timestamp);
             const placementWindow = Math.max(option('ScaffoldBPS','WindowSeconds'), option('TellyScaffold','WindowSeconds')) * 1000;
             while (state.placements.length && timestamp - state.placements[0].at >= placementWindow) state.placements.shift();
             resetVlIfDue(state, timestamp);
@@ -1478,6 +1598,7 @@
             state.eligible = mode?.isSurvival() === true && entity.isAlive() && !entity.isPassenger() && !entity.isSleeping();
             if (!state.eligible) {
                 state.combat = null;
+                state.dropEvents=[];
                 state.graceUntil = timestamp + 1000;
                 clearEvidence(state);
                 clearProjectileEvidence(state);
@@ -1507,6 +1628,7 @@
         }
         if (pendingAntiCheatPackets) processAntiCheatPackets(level, timestamp);
         try { tickProjectiles(timestamp); } catch (error) { warn('Projectile checks',error); }
+        try { tickInventoryDrops(timestamp); } catch (error) { warn('Inventory Drop',error); }
         try { syncTabMarks(connection,local); } catch (error) { warn('Anti-cheat Tab list',error); }
         tickWatch(timestamp);
         for (const [id, state] of antiCheatPlayers) {
@@ -1645,7 +1767,7 @@
             return cached;
         }
         return {
-            entity, health: hp, distance: meters, name, friend, suspect, metadataAt,
+            entity, health: hp, distance: meters, name, friend, suspect, metadataAt, pillMeasures:cached?.pillMeasures,
             healthText: cached?.health === hp ? cached.healthText : Component.literal(String(hp)),
             distanceText: cached?.distance === meters ? cached.distanceText : Component.literal(meters + 'm'),
         };
@@ -1675,11 +1797,11 @@
             const base = labelFont.getScaleToVanillaFont() * tagScale;
             const height = labelFont.getHeight() * base;
             const parts = [
-                {component: record.healthText, color: new Color(0xff000000 | healthColor(record.health)), scale: .85, heart: true},
-                {component: record.name, color: white, scale: 1},
+                {key:'health', component: record.healthText, color: new Color(0xff000000 | healthColor(record.health)), scale: .85, heart: true},
+                {key:'name', component: record.name, color: white, scale: 1},
             ];
-            if (record.friend) parts.push({component: friendLabel, color: friendColor, scale: .85});
-            parts.push({component: record.distanceText, color: grey, scale: .85});
+            if (record.friend) parts.push({key:'friend', component: friendLabel, color: friendColor, scale: .85});
+            parts.push({key:'distance', component: record.distanceText, color: grey, scale: .85});
             const iconFont = smoothHeartFont(labelFont);
             const nominalScale = f32(iconFont.getScaleToVanillaFont() * tagScale * .85);
             const nominalWidth = iconFont.getStringWidth(heartGlyph, nominalScale, false);
@@ -1687,8 +1809,14 @@
             const iconWidth = nominalWidth * iconScale / nominalScale;
             const iconHeight = iconFont.getHeight() * iconScale;
             for (const part of parts) {
-                part.width = labelFont.getStringWidth(part.component, f32(base * part.scale), false)
-                    + height * .6 + (part.heart ? height * .8 : 0);
+                const measures=record.pillMeasures ??= {};
+                let measure=measures[part.key];
+                const scale=f32(base*part.scale);
+                if (!measure || measure.component!==part.component || measure.font!==labelFont || measure.scale!==scale) {
+                    measures[part.key]=measure={component:part.component,font:labelFont,scale,
+                        width:labelFont.getStringWidth(part.component,scale,false)};
+                }
+                part.width = measure.width + height * .6 + (part.heart ? height * .8 : 0);
             }
             if (record.suspect) parts.unshift({skull:true, width:height * 1.42});
             layout = record.pills = {
@@ -1727,12 +1855,140 @@
         if(!changedByUser){changing=true;try{NativeTags.setEnabled(originalEnabled);}finally{changing=false;}}
         originalHook=null;records=[];
     }
+    let bedTypes=null, bedFailed=false, bedOriginalHook=null, bedOwned=false;
+    let bedRecords=[], bedSampleAt=0, bedWorld=null;
+    const bedItemCache=new Map();
+    function loadBedTypes() {
+        const beds=type('net.ccbluex.liquidbounce.features.module.modules.render.ModuleBedPlates');
+        // Package-private nested classes are reflection-only in GraalJS, not Java.type exports.
+        const state=type('java.lang.Class').forName('net.ccbluex.liquidbounce.features.module.modules.render.ModuleBedPlates$BedStateRenderState',false,beds.class.getClassLoader());
+        function field(klass,name) { const value=klass.getDeclaredField(name);value.setAccessible(true);return value; }
+        function method(name) { const value=beds.class.getDeclaredMethod(name);value.setAccessible(true);return value; }
+        return {module:beds.INSTANCE, beds:field(beds.class,'beds'), render:field(beds.class,'renderHandler'),
+            state:field(state,'bedState'), surrounding:field(state,'surrounding'),
+            ignoreSelf:field(beds.class,'ignoreSelfBed'), ignoreAdjacent:method('getIgnoreAdjacent'),
+            offset:method('getRenderOffset'), maxCount:method('getMaxCount'),
+            scale:field(beds.class,'scale'), directions:type('net.minecraft.core.Direction').values(),
+            properties:type('net.minecraft.world.level.block.state.properties.BlockStateProperties'),
+            bed:type('net.minecraft.world.level.block.BedBlock'), part:type('net.minecraft.world.level.block.state.properties.BedPart')};
+    }
+    function restoreBeds() {
+        if (bedOwned) EventManager.registerEventHook(OverlayEvent.class,bedOriginalHook);
+        bedOwned=false;bedOriginalHook=null;bedRecords=[];bedSampleAt=0;bedWorld=null;
+    }
+    function failBeds(error) {
+        bedFailed=true;restoreBeds();warn('Bed plates',error);
+    }
+    function sampleBedPlates(timestamp) {
+        if (bedFailed) return;
+        if (bedWorld !== client.level) { bedWorld=client.level;bedRecords=[];bedItemCache.clear();bedSampleAt=0; }
+        if (timestamp-bedSampleAt<200) return;
+        bedSampleAt=timestamp;
+        bedTypes ??= loadBedTypes();
+        const types=bedTypes, module=types.module;
+        if (!module.getEnabled()) { restoreBeds();return; }
+        // Claim only after resolving every host field, preserving the original hook on failure.
+        if (!bedOwned) {
+            const original=types.render.get(module);
+            EventManager.unregisterEventHook(OverlayEvent.class,original);
+            bedOriginalHook=original;bedOwned=true;
+        }
+        if (!client.level || !client.player || renderPaused || client.gui.screen()!=null) { bedRecords=[];return; }
+        const camera=client.gameRenderer.mainCamera().position(), candidates=[];
+        const states=types.beds.get(module).iterator();
+        const ignore=types.ignoreSelf.get(module).getActiveMode();
+        const offset=types.offset.invoke(module);
+        while (states.hasNext()) {
+            const state=states.next(), bed=types.state.get(state), pos=bed.trackedBlockPos();
+            const distanceSquared=bed.pos().distanceToSqr(camera);
+            if (distanceSquared>bedDistance*bedDistance || !client.level.hasChunkAt(pos)
+                || ignore.isSelfBed(bed.block(),pos)) continue;
+            // The server may have removed a bed between tracker updates.
+            if (!(client.level.getBlockState(pos).getBlock() instanceof types.bed)) continue;
+            candidates.push({state,bed,pos,distanceSquared});
+        }
+        candidates.sort((a,b)=>a.distanceSquared-b.distanceSquared);
+        const adjacent=types.ignoreAdjacent.invoke(module), records=[];
+        const maximum=Math.max(1,Math.min(128,Number(types.maxCount.invoke(module))));
+        const scaleCurve=types.scale.get(module);
+        for (const candidate of candidates) {
+            if (records.length>=maximum) break;
+            if (adjacent && records.some(record=>Math.abs(record.pos.getX()-candidate.pos.getX())
+                +Math.abs(record.pos.getY()-candidate.pos.getY())+Math.abs(record.pos.getZ()-candidate.pos.getZ())===1)) continue;
+            const scale=Number(scaleCurve.transform(f32(Math.sqrt(candidate.distanceSquared))));
+            if (!Number.isFinite(scale) || scale<.01) continue;
+            const blocks=[], seen=new Set(), surrounding=types.surrounding.get(candidate.state).iterator();
+            while (surrounding.hasNext()) {
+                const block=surrounding.next().block();
+                if (seen.has(block)) continue;
+                seen.add(block);
+                let stack=bedItemCache.get(block);
+                if (!stack) { stack=block.asItem().getDefaultInstance();bedItemCache.set(block,stack); }
+                if (!stack.isEmpty()) blocks.push(stack);
+            }
+            // Unfiltered first-layer blocks determine status, independent of icon filters.
+            const status=bedProtection(candidate.bed,types);
+            records.push({pos:candidate.pos,position:candidate.bed.pos().add(offset),blocks,
+                label:Component.literal(status),scale,layout:null});
+        }
+        bedRecords=records;
+    }
+    function bedProtection(bed,types) {
+        const level=client.level, pos=bed.trackedBlockPos(), block=level.getBlockState(pos);
+        const facing=block.getValue(types.properties.HORIZONTAL_FACING);
+        const partner=pos.relative(block.getValue(types.bed.PART)===types.part.HEAD ? facing.getOpposite() : facing);
+        if (!level.hasChunkAt(partner) || !(level.getBlockState(partner).getBlock() instanceof types.bed)) return 'Unknown Protection';
+        let covered=0, total=0;
+        for (const center of [pos,partner]) for (const direction of types.directions) {
+            const next=center.relative(direction);
+            // Ground beneath the bed is not part of a BedWars defence layer.
+            if (next.getY()<center.getY() || next.equals(pos) || next.equals(partner)) continue;
+            if (!level.hasChunkAt(next)) return 'Unknown Protection';
+            total++;
+            if (level.getBlockState(next).isCollisionShapeFullBlock(level,next)) covered++;
+        }
+        if (covered===0) return bed.surroundingBlocks().isEmpty() ? 'Not Protected' : 'Not Full Protected';
+        return covered===total ? 'Fully Protected' : 'Not Full Protected';
+    }
+    function drawBedPlates(event) {
+        if (!active || !bedOwned || bedFailed || renderPaused || !bedRecords.length || !client.player || !client.level
+            || !bedTypes.module.getEnabled() || client.gui.screen()!=null) return;
+        try {
+            const ctx=event.getContext(), f=font(), win=client.getWindow();
+            for (const record of bedRecords) {
+                const screen=Projection.calculateScreenPos(record.position);
+                if (!screen || screen.z() < -1 || screen.z()>1) continue;
+                let layout=record.layout;
+                if (!layout || layout.font!==f) {
+                    const base=f32(f.getScaleToVanillaFont()*.9), labelWidth=f.getStringWidth(record.label,base,false);
+                    const width=Math.max(labelWidth+12,record.blocks.length*18+10);
+                    record.layout=layout={font:f,base,width,labelWidth,height:record.blocks.length ? 38 : 20};
+                }
+                const {base,width,height}=layout, scale=record.scale;
+                const x=screen.x()-width*scale/2,y=screen.y()-height*scale;
+                if (x>win.getGuiScaledWidth() || x+width*scale<0 || y>win.getGuiScaledHeight() || y+height*scale<0) continue;
+                rounded(ctx,x,y,width*scale,height*scale,background,5*scale);
+                const pose=ctx.pose();
+                pose.pushMatrix();
+                try {
+                    pose.translate(f32(x),f32(y));pose.scale(f32(scale),f32(scale));
+                    let itemX=(width-record.blocks.length*18+2)/2;
+                    for (const stack of record.blocks) { ctx.item(stack,Math.round(itemX),5);itemX+=18; }
+                    text(ctx,f,record.label,(width-layout.labelWidth)/2,record.blocks.length ? 26 : 6,white,base);
+                } finally { pose.popMatrix(); }
+            }
+        } catch (error) { failBeds(error);publish(); }
+    }
+
     let preferenceRecord, featureRecord;
     function readFeatures(){
         const store = storage(), rawPreferences = store.get('opai.preferences'), rawFeatures = store.get(PREFIX+'features');
         if (rawPreferences !== preferenceRecord) {
             preferenceRecord = rawPreferences;
-            icmpEnabled = decode(rawPreferences)?.icmpPing !== false;
+            const preferences = decode(rawPreferences);
+            icmpEnabled = preferences?.icmpPing !== false;
+            nametagDistance = renderDistance(preferences?.nametagDistance);
+            bedDistance = renderDistance(preferences?.bedDistance);
         }
         if (rawFeatures !== featureRecord) {
             featureRecord = rawFeatures;
@@ -1921,6 +2177,7 @@
         try { sampleCombatTarget(timestamp); } catch (error) { clearCombatTarget();warn('Target HUD', error); }
         try {
             heartbeat();
+            try { sampleBedPlates(timestamp); } catch (error) { failBeds(error); }
             if (tagWorld !== client.level) {
                 tagWorld = client.level;
                 tagCache.clear();
@@ -1934,13 +2191,15 @@
             while (entities.hasNext()) {
                 const entity = entities.next();
                 if (entity === client.player || !entity.isAlive()) continue;
-                const distance = entity.position().distanceTo(camera);
-                if (distance <= 128) candidates.push({entity, distance});
+                const position = entity.position();
+                const distanceSquared = position.distanceToSqr(camera);
+                if (distanceSquared <= nametagDistance * nametagDistance) candidates.push({entity, distanceSquared});
             }
-            candidates.sort((left, right) => left.distance - right.distance);
+            candidates.sort((left, right) => left.distanceSquared - right.distanceSquared);
             const nearest = candidates.slice(0, 128).reverse();
             const visible = new Set();
-            records = nearest.map(({entity, distance}) => {
+            records = nearest.map(({entity, distanceSquared}) => {
+                const distance = Math.sqrt(distanceSquared);
                 visible.add(entity);
                 const record = prepare(entity, distance, tagCache.get(entity), timestamp);
                 tagCache.set(entity, record);
@@ -1955,9 +2214,9 @@
     }
     function drawTags(event){
         if(!active||renderPaused||!tookTags||tagFailed||!records.length||!NativeTags.getEnabled()||client.gui.screen()!=null)return;
-        try{const f=font(),delta=event.getTickDelta(),ctx=event.getContext();for(const record of records){const entity=record.entity;if(!entity.isAlive())continue;
+        try{const f=font(),delta=event.getTickDelta(),ctx=event.getContext(),win=client.getWindow();for(const record of records){const entity=record.entity;if(!entity.isAlive())continue;
                 const pos=Entity.interpolateCurrentPosition(entity,delta).add(0,entity.getEyeHeight(entity.getPose())+.55,0);
-                const screen=Projection.calculateScreenPos(pos);if(screen&&screen.z()>=-1&&screen.z()<=1)drawPills(ctx,record,screen.x(),screen.y(),1,f);
+                const screen=Projection.calculateScreenPos(pos);if(screen&&screen.z()>=-1&&screen.z()<=1&&screen.x()>=-256&&screen.x()<=win.getGuiScaledWidth()+256&&screen.y()>=-32&&screen.y()<=win.getGuiScaledHeight()+32)drawPills(ctx,record,screen.x(),screen.y(),1,f);
             }}catch(error){tagFailed=true;warn('Nametags',error);restoreTags();publish();}
     }
     function drawPreview(event){
@@ -1985,12 +2244,12 @@
         pendingMusicOpen=false;lastMusicConfig='';worldLyricsEnabled=false;worldDirty=false;worldHook=null;worldEvent=null;renderPaused=false;worldTypes=null;worldLayouts.clear();closeRuntime();
         activityMenu=null;activityContainer=null;activitySlots=[];activityFeedback=[];activityMouseHook=null;activityTypes=null;bedModule=packetMine=bedProvider=blockRegistry=undefined;activityHadState=false;lastActivitySample=0;lastActivityWrite=0;storage().remove(PREFIX+'activity');storage().remove(PREFIX+'containerView');storage().remove(PREFIX+'containerClick');
         active=false;for(const [event,h] of hooks)EventManager.unregisterEventHook(event,h);hooks=[];
-        restoreTags();request=null;records=[];tagCache.clear();tagWorld=null;lastPreviewRead=0;lastLabelFont=heartFont=null;storage().remove(PREFIX+'snapshot');storage().remove(PREFIX+'preview');owner=null;
+        restoreBeds();bedTypes=null;bedFailed=false;bedItemCache.clear();restoreTags();request=null;records=[];tagCache.clear();tagWorld=null;lastPreviewRead=0;lastLabelFont=heartFont=null;storage().remove(PREFIX+'snapshot');storage().remove(PREFIX+'preview');owner=null;
     }
     script.on('enable',()=>{
-        if(active)return;active=true;lastPublish=0;lastPreviewError=0;tagFailed=previewFailed=false;errors=[];
+        if(active)return;active=true;lastPublish=0;lastPreviewError=0;tagFailed=previewFailed=bedFailed=false;errors=[];
         owner=new Listener({getRunning:()=>active,getDebugOwnerId:()=>'OpaiBridge'});
-        try{hook(TickEvent,-500,tick);hook(OverlayEvent,-2000,drawTags);hook(ScreenEvent,-30000,drawPreview);hook(ShutdownEvent,30000,stop);hook(AttackEvent,-2000,trackCombatTarget);
+        try{hook(TickEvent,-500,tick);hook(OverlayEvent,-2000,drawTags);hook(OverlayEvent,-2100,drawBedPlates);hook(ScreenEvent,-30000,drawPreview);hook(ShutdownEvent,30000,stop);hook(AttackEvent,-2000,trackCombatTarget);
             hook(ModuleToggleEvent,-1000,event=>{
                 const name=String(event.getModuleName()).toLowerCase();
                 if(tookTags&&!changing&&name==='nametags')changedByUser=true;

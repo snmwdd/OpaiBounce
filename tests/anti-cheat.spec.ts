@@ -27,7 +27,7 @@ async function antiCheat(page: Page) {
 
 test('all Anti-cheat checks have an expandable switch and readable parameter labels', async ({page}) => {
     const api = await antiCheat(page);
-    await expect(api.module.locator('.group-head')).toHaveCount(19);
+    await expect(api.module.locator('.group-head')).toHaveCount(20);
     await expect(api.module.getByRole('checkbox',{name:'Auto Throw',exact:true})).toBeChecked();
     await expect(api.module.getByRole('checkbox',{name:'Auto Bow',exact:true})).toBeChecked();
     await expect(api.module.locator('input[type="range"]:visible')).toHaveCount(2);
@@ -69,7 +69,7 @@ test('nested Anti-cheat edits persist native groups and keep every other check u
     await expect.poll(() => api.saved.value.find((setting:any)=>setting.name==='Auto Throw')?.value.find((setting:any)=>setting.name==='Enabled')?.value).toBe(false);
     expect(api.saved.value.filter((setting:any)=>setting.name!=='Auto Throw'))
         .toEqual(before.value.filter((setting:any)=>setting.name!=='Auto Throw'));
-    expect(api.saved.value.filter((setting:any)=>setting.valueType==='TOGGLEABLE')).toHaveLength(19);
+    expect(api.saved.value.filter((setting:any)=>setting.valueType==='TOGGLEABLE')).toHaveLength(20);
     expect(api.saved.value.some((setting:any)=>setting.name.includes('Settings'))).toBe(false);
     await page.reload();
     await api.module.getByRole('button',{name:'Expand Auto Throw',exact:true}).click();
@@ -110,5 +110,22 @@ test('Reset VL reveals its interval only while enabled and both settings persist
     await toggle.uncheck();
     await expect(interval).not.toBeVisible();
     expect(api.saved.value.find((setting:any)=>setting.name==='Reset VL')?.value.find((setting:any)=>setting.name==='Reset Interval (s)')?.value).toBe(60);
+    expect(api.errors).toEqual([]);
+});
+
+
+test('Inventory Drop has its own animated native group and independent window, threshold and VL', async ({page}) => {
+    const api = await antiCheat(page);
+    const group = api.module.locator('[data-setting="Inventory Drop"]').first();
+    await expect(group.getByRole('checkbox', {name:'Inventory Drop', exact:true})).toBeChecked();
+    await expect(group.getByRole('spinbutton', {name:'Max Drops value', exact:true})).not.toBeVisible();
+    await group.getByRole('button', {name:'Expand Inventory Drop', exact:true}).click();
+    await expect(group.getByRole('spinbutton', {name:'Max Drops value', exact:true})).toHaveValue('5');
+    const window = group.getByRole('spinbutton', {name:'Time Window (s) value', exact:true});
+    await expect(window).toHaveValue('5');
+    await window.fill('4');await window.press('Tab');
+    await expect.poll(() => api.saved.value.find((s:any)=>s.name==='Inventory Drop')?.value.find((s:any)=>s.name==='Time Window (s)')?.value).toBe(4);
+    await group.getByRole('checkbox', {name:'Inventory Drop', exact:true}).uncheck();
+    await expect.poll(() => api.saved.value.find((s:any)=>s.name==='Inventory Drop')?.value[0]?.value).toBe(false);
     expect(api.errors).toEqual([]);
 });

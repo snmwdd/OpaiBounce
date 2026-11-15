@@ -9,7 +9,9 @@ const defaults = {
     shadows: true,
     blur: true,
     islandStyle: 'new' as 'new' | 'old',
-    targetHudStyle: 'new' as 'new' | 'old',
+    targetHudStyle: 'new' as 'new' | 'old' | 'idk',
+    nametagDistance: 128,
+    bedDistance: 128,
     hudBackground: 'translucent' as 'translucent' | 'solid',
     loadKeybinds: false,
     icmpPing: true,
@@ -24,6 +26,10 @@ let lastNativeRecord: string | null | undefined;
 let lastAppliedRead = 0;
 let reads = 0;
 
+function distance(value: unknown): number {
+    return typeof value === 'number' && Number.isFinite(value) ? Math.round(Math.max(8, Math.min(256, value))) : 128;
+}
+
 function parsePreferences(raw: string | null): OpaiPreferences {
     let stored: Partial<OpaiPreferences> | null = null;
     try {
@@ -35,7 +41,9 @@ function parsePreferences(raw: string | null): OpaiPreferences {
         shadows: typeof stored?.shadows === 'boolean' ? stored.shadows : defaults.shadows,
         blur: typeof stored?.blur === 'boolean' ? stored.blur : defaults.blur,
         islandStyle: stored?.islandStyle === 'old' ? 'old' : 'new',
-        targetHudStyle: stored?.targetHudStyle === 'old' ? 'old' : 'new',
+        targetHudStyle: stored?.targetHudStyle === 'idk' ? 'idk' : stored?.targetHudStyle === 'old' ? 'old' : 'new',
+        nametagDistance: distance(stored?.nametagDistance),
+        bedDistance: distance(stored?.bedDistance),
         hudBackground: stored?.hudBackground === 'solid' ? 'solid' : 'translucent',
         loadKeybinds: stored?.loadKeybinds === true,
         icmpPing: stored?.icmpPing !== false,
