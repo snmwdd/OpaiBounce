@@ -1,6 +1,6 @@
 # OpaiBounce
 
-为 LiquidBounce 制作的 Opai 风格主题与配套 LiquidScript。当前主题 **1.1.2**，脚本 **1.10.0**。
+为 LiquidBounce 制作的 Opai 风格主题与配套 LiquidScript。当前主题 **1.1.3**，脚本 **1.10.1**。
 
 # 请必须装备脚本才能正常运行
 https://github.com/snmwdd/OpaiBounce/tree/main/script
@@ -48,7 +48,7 @@ npm run test:browser
 
 ## 安装
 
-从 [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) 下载同版本的主题和脚本，或在当前源码运行 `npm run package` 生成 `release/OpaiBounce-1.1.2.zip`。
+从 [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) 下载同版本的主题和脚本，或在当前源码运行 `npm run package` 生成 `release/OpaiBounce-1.1.3.zip`。
 
 1. 在游戏内执行 `.client theme browse`，将安装包 `themes/opai` 中的整个 `opai` 文件夹放入打开的主题目录。
 2. 安装 LiquidBounce 官方 Script API 扩展。执行 `.script browse`，将安装包 `scripts/OpaiBounceScript.js` 放入脚本目录，只保留一份该脚本。
@@ -58,7 +58,7 @@ npm run test:browser
 
 脚本提供服务器地址 / Ping、实体预览和 Opai Nametags，音乐通过原生 `TritiumMusic` 模块配置。箱子隐藏界面和鼠标解锁使用 ChestStealer 自身的 SilentScreen / UnlockCursor 设置。
 
-在 ClickGUI 的 Misc 中开启 `Anti-cheat` 后，本地聊天显示 VL 和 `Watch` 观看入口。每项检查均可展开调整阈值、时间窗口、告警间隔及每次增加的 VL。`Cheater VL` 直接指定标记门槛，默认 11。`Reset VL` 默认关闭，开启后显示 `Reset Interval (s)`，默认 30 秒，可设为 5–600 秒。从玩家本轮第一次触发检查开始计时，到期清空该玩家总 VL 和各项 VL，保留已保存标记。保留旧配置开关和按服务器保存的标记。`Auto Throw` 检查持续瞄准玩家时的高频投掷，`Auto Bow` 检查可归属到弓箭使用者、靠近或命中自己的箭。`Telly Scaffold` 覆盖上升阶段及刚落地后的方块更新。服务器插件和网络状况会影响观察式检测。
+在 ClickGUI 的 Misc 中开启 `Anti-cheat` 后，本地聊天显示 VL 和 `Watch` 观看入口。每项检查注册为原生可开关设置组，通过右侧箭头展开，参数使用短英文名，可调整阈值、时间窗口、告警间隔及每次增加的 VL。`Cheater VL` 直接指定标记门槛，默认 11。`Reset VL` 默认关闭，开启后显示 `Reset Interval (s)`，默认 30 秒，可设为 5–600 秒。从玩家本轮第一次触发检查开始计时，到期清空该玩家总 VL 和各项 VL，保留已保存标记。保留旧配置开关和按服务器保存的标记。`Auto Throw` 检查持续瞄准玩家时的高频投掷，`Auto Bow` 检查可归属到弓箭使用者、靠近或命中自己的箭。`Telly Scaffold` 覆盖上升阶段及刚落地后的方块更新。服务器插件和网络状况会影响观察式检测。
 
 `.hack add <player>` 添加标记，`.hack delete <player>` 删除标记，`.hack list [page]` 列出标记。点击列表中的 `[X]` 可直接移除，并清除该玩家当前 VL。关闭检测模块时仍可使用命令管理标记。主题和脚本需要一起更新。
 

@@ -4,7 +4,7 @@
 // Screen heartbeats keep telemetry and preview alive while the singleplayer world is paused.
 (function () {
     'use strict';
-    const VERSION = '1.10.0', PREFIX = 'opai.bridge.';
+    const VERSION = '1.10.1', PREFIX = 'opai.bridge.';
     function decode(value) { try { return value == null ? null : JSON.parse(String(value)); } catch (_) { return null; } }
     function previewRequest(value, now, width, height) {
         const data = decode(value), r = data && data.rect;
@@ -25,6 +25,23 @@
         AutoBlock:'Auto Block', 'Legit Scaffold':'Eagle', AimAssist:'Aim Assist', AutoClicker:'Auto Clicker',
         NoSlow:'No Slow', FastMine:'Fast Mine', NoFall:'No Fall',
         AutoThrow:'Auto Throw', AutoBow:'Auto Bow',
+    };
+    const CHECK_NAMES = {
+        AutoBlock:'Auto Block', LegitScaffold:'Eagle', Scaffold:'Scaffold', ScaffoldBPS:'Scaffold BPS',
+        TellyScaffold:'Telly Scaffold', NoSlow:'No Slow', Nuker:'Nuker', BedNuker:'Bed Nuker',
+        AirHover:'Air Hover', GroundSpeed:'Ground Speed', AimAssist:'Aim Assist', AutoClicker:'Auto Clicker',
+        Blink:'Blink', FastMine:'Fast Mine', NoFall:'No Fall', Protocol:'Protocol',
+        AutoThrow:'Auto Throw', AutoBow:'Auto Bow',
+    };
+    const PARAMETER_NAMES = {
+        FlagIntervalSeconds:'Flag Interval (s)', VL:'VL per Flag', WindowSeconds:'Time Window (s)',
+        BlockTimeSeconds:'Block Time (s)', HoldSeconds:'Hold Time (s)', LockSeconds:'Lock Time (s)',
+        WaitSeconds:'Wait Time (s)', JumpTimeSeconds:'Jump Time (s)', BlockRatio:'Blocking Ratio',
+        LockRatio:'Lock Ratio', MaxBPS:'Max BPS', MaxCPS:'Max CPS', MaxRate:'Max per Second',
+        MinDistance:'Min Distance', TargetRadius:'Target Radius', TimingMs:'Timing Spread (ms)',
+        MaxBreakMs:'Break Time (ms)', MinSpeed:'Min Speed (BPS)', MinTravel:'Jump Travel',
+        MaxVerticalStep:'Vertical Step', AimAngle:'Aim Angle', MaxPitch:'Max Pitch',
+        MinPitch:'Min Pitch', SmoothTicks:'Smooth Ticks',
     };
     // [default, minimum, maximum]. Flat native keys preserve earlier saved switches.
     const CHECK_RULES = {
@@ -174,33 +191,80 @@
 
     function registerAntiCheatModule() {
         const Setting = type('net.ccbluex.liquidbounce.script.bindings.features.ScriptSetting').INSTANCE;
+        const NativeGroup = Java.extend(type('net.ccbluex.liquidbounce.config.types.group.ToggleableValueGroup'));
+        const ArrayList = type('java.util.ArrayList');
+        const JsonObject = type('com.google.gson.JsonObject'), JsonArray = type('com.google.gson.JsonArray');
+        function group(name, legacyName, enabled) {
+            const aliases = new ArrayList();
+            if (name !== legacyName) aliases.add(legacyName);
+            return new NativeGroup(null, name, enabled, aliases, {
+                // These groups own options. Detection is scheduled by the module's tick handler.
+                onToggled:state => state,
+                prepareDeserialize(json) {
+                    const value = json.get('value');
+                    if (!value?.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) return;
+                    const child = new JsonObject(), children = new JsonArray();
+                    child.addProperty('name','Enabled');
+                    child.addProperty('value',value.getAsBoolean());
+                    children.add(child);
+                    json.add('value',children);
+                },
+            });
+        }
+        function mirror(legacy, nested) {
+            let syncing = false;
+            function copy(target, value) {
+                if (syncing) return;
+                syncing = true;
+                try { target.set(value); } finally { syncing = false; }
+            }
+            legacy.onChanged(value => copy(nested,value));
+            nested.onChanged(value => copy(legacy,value));
+        }
         antiCheatValues = {
             extraVl:Setting.int({name:'VLAbove10ToAlert', default:1, range:[1,990]}),
             flagInterval:Setting.float({name:'FlagIntervalSeconds', default:.75, range:[0,30]}),
             alertVl:Setting.int({name:'AlertVL', default:11, range:[1,1000]}),
-            resetVl:Setting.boolean({name:'VLReset', default:false}),
             resetSeconds:Setting.int({name:'VLResetSettingsIntervalSeconds', default:30, range:[5,600]}),
         };
+        const settings = {...antiCheatValues}, groups = {};
+        const resetGroup = group('Reset VL','VLReset',false);
+        antiCheatValues.resetVl = resetGroup.getEnabledValue();
         antiCheatValues.resetVl.onChanged(value => { vlResetEnabled = value === true; rescheduleVlReset(); });
         antiCheatValues.resetSeconds.onChanged(value => { vlResetIntervalMs = Number(value) * 1000; rescheduleVlReset(); });
+        antiCheatValues.resetSeconds.notAnOption();
+        const resetInterval = Setting.int({name:'Reset Interval (s)',default:30,range:[5,600]});
+        mirror(antiCheatValues.resetSeconds,resetInterval);
+        resetGroup.value(resetInterval);
         antiCheatValues.extraVl.notAnOption();
         antiCheatValues.extraVl.onChanged(value => antiCheatValues.alertVl.set(VL_BASELINE + Number(value)));
         for (const [name, enabled] of Object.entries(CHECK_DEFAULTS)) {
             // Old configurations explicitly saved these two experimental checks as false.
             const label = name === 'AimAssist' || name === 'AutoClicker' ? name + 'Detection' : name;
-            antiCheatValues[name] = Setting.boolean({name:label, default:enabled});
+            const checkGroup = groups[name] = group(CHECK_NAMES[name],label,enabled);
+            antiCheatValues[name] = checkGroup.getEnabledValue();
         }
         for (const [check, fields] of Object.entries(CHECK_RULES)) {
             const rules = {...fields, FlagIntervalSeconds:[.75,0,30], VL:[1,1,10]};
             for (const [key, [value, min, max]] of Object.entries(rules)) {
                 const integer = /^(MinSwings|MinCycles|MinBlocks|MinJumps|MinBreaks|MinSnaps|MinBursts|MinThrows|MinArrows|SmoothTicks|TimingMs|MaxBreakMs|VL)$/.test(key);
-                const setting = Setting[integer ? 'int' : 'float']({name:check+'Settings'+key, default:value, range:[min,max]});
-                antiCheatValues[check+'Settings'+key] = setting;
+                const builder = integer ? 'int' : 'float';
+                const name = check+'Settings'+key;
+                const setting = Setting[builder]({name, default:value, range:[min,max]}).notAnOption();
+                antiCheatValues[name] = settings[name] = setting;
                 setting.onChanged(value => checkOptions[check][key] = Number(value));
+                const nested = Setting[builder]({name:PARAMETER_NAMES[key] ?? key.replace(/([a-z0-9])([A-Z])/g,'$1 $2'),
+                    default:value, range:[min,max]});
+                mirror(setting,nested);
+                groups[check].value(nested);
             }
         }
-        script.registerModule({name:'Anti-cheat',category:'Misc',description:'Checks nearby players. Alerts and marks players at the selected violation level.',settings:antiCheatValues}, module => {
+        settings.resetVl = resetGroup;
+        Object.assign(settings,groups);
+        script.registerModule({name:'Anti-cheat',category:'Misc',description:'Checks nearby players. Alerts and marks players at the selected violation level.',settings}, module => {
             antiCheatModule = module;
+            resetGroup.setBase(module);
+            for (const checkGroup of Object.values(groups)) checkGroup.setBase(module);
             module.on('enable', resetAntiCheat);
             module.on('disable', () => { stopAntiCheatPacketHook(); resetAntiCheat(); });
         });

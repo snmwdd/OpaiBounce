@@ -1,4 +1,4 @@
-# OpaiBounceScript 1.10.0
+# OpaiBounceScript 1.10.1
 
 `OpaiBounceScript.js` is the single source of the companion LiquidScript. It provides server address / Ping, ESP and Nametags previews, Opai Nametags, island activity telemetry, and the native TritiumMusic and Anti-cheat modules.
 
@@ -22,4 +22,4 @@ The AutoBlock and Scaffold checks adapt ideas from [Rain Anticheat](https://gith
 - `.hack list [page]` lists marked players with a clickable `[X]`. Names are saved for later removal.
 - Commands use the current server or singleplayer world. List actions become stale when changing worlds.
 
-Existing Boolean setting keys are preserved. Parameter keys use `<Check>Settings<Parameter>` in the native configuration and are grouped by the theme. The old extra-VL setting migrates to the direct `AlertVL` value.
+Existing Boolean setting keys are preserved. Each check is registered as a native LiquidBounce toggleable group. Its nested parameters use short English names. Legacy flat parameter keys are hidden and mirrored for saved-configuration compatibility. The old extra-VL setting migrates to the direct `AlertVL` value.

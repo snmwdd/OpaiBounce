@@ -19,6 +19,7 @@
     $: range=type==='FLOAT_RANGE'||type==='INT_RANGE';
     $: group=type==='CONFIGURABLE'||type==='TOGGLEABLE';
     $: enabledSetting=type==='TOGGLEABLE' ? setting.value.find((v:any)=>v.name==='Enabled') : undefined;
+    $: if (setting.name === 'Reset VL' && enabledSetting) expanded = enabledSetting.value === true;
     $: children=group ? setting.value.filter((v:any)=>v!==enabledSetting) : type==='CHOICE' ? setting.choices?.[setting.active]?.value ?? [] : [];
     $: choices=type==='CHOICE' ? Object.keys(setting.choices??{}) : setting.choices ?? [];
     $: low=Number(setting.range?.from ?? setting.range?.min ?? 0);

@@ -16,7 +16,6 @@
     import {previewModule} from '../../opai/scriptBridge';
     import {get} from 'svelte/store';
     import Reveal from "../../opai/Reveal.svelte";
-    import AntiCheatSettings from '../../opai/AntiCheatSettings.svelte';
 
     import {description as descriptionStore, highlightModuleName} from "./clickgui_store";
     import {persistentDataLoaded,setItem} from "../../integration/persistent_storage";
@@ -142,16 +141,12 @@
     {#if configurable}
         <div class="settings">
             {#key settingsVersion}
-            {#if name === 'Anti-cheat'}
-                <AntiCheatSettings {path} bind:configurable on:change={updateModuleSettings}/>
-            {:else}
             {#each configurable.value as setting (setting.name)}
                 {#if setting.name !== "Bind" && setting.name !== "Hidden"}
                     <GenericSetting {path} bind:setting on:change={updateModuleSettings}
-                        />
+                        displayName={name === 'Anti-cheat' && setting.name === 'AlertVL' ? 'Cheater VL' : undefined}/>
                 {/if}
             {/each}
-            {/if}
             {/key}
         </div>
     {/if}

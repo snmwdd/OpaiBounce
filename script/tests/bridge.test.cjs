@@ -25,12 +25,21 @@ function host(arity=9,musicSupport=false){
  const setting=o=>{
   let v=o.default;const callbacks=[];
   const setting={...o,get:()=>v,set:n=>{v=n;callbacks.forEach(callback=>callback(n));},
-   notAnOption:()=>setting,onChanged:callback=>{callbacks.push(callback);return setting;}};
+   getName:()=>o.name,notAnOption:()=>{setting.hidden=true;return setting;},onChanged:callback=>{callbacks.push(callback);return setting;}};
   return setting;
  };
+ class ToggleableValueGroup {
+  constructor(parent,name,enabled,aliases) {this.parent=parent;this.name=name;this.aliases=aliases;this.values=[setting({name:'Enabled',default:enabled})];}
+  getEnabledValue(){return this.values[0];}
+  value(value){this.values.push(value);return value;}
+  setBase(base){this.base=base;}
+  getContainedValues(){return this.values;}
+  getName(){return this.name;}
+  getValueType(){return 'TOGGLEABLE';}
+ }
  function component(text,color=null) {return {text,color,parts:[],getString(){return this.text;},getVisualOrderText:()=>({text}),withColor:rgb=>component(text,rgb),equals:other=>other?.text===text&&other?.color===color,append(part){this.text+=part.text;this.parts.push(part);return this;},
   getStyle(){return {withUnderlined(){return this;},withClickEvent:click=>({click})};},setStyle(style){this.click=style.click;return this;}};}
- const types={FriendManager:{INSTANCE:{isFriend:entity=>friends.has(entity)}},ModuleClickGui:{INSTANCE:{onEnabled(){}}},Render3DKt:{submitTextAlwaysOnTop(...args){exact(args[2],args[3]);draws.push(['worldText',...args]);}},'Font$DisplayMode':{SEE_THROUGH:'see-through'},ScriptSetting:{INSTANCE:{boolean:setting,int:setting,float:setting,choose:o=>setting({...o,default:{getTag:()=>o.default}})}},
+ const types={ToggleableValueGroup,ArrayList:class extends Array{add(value){this.push(value);}},JsonObject:class{},JsonArray:class{},FriendManager:{INSTANCE:{isFriend:entity=>friends.has(entity)}},ModuleClickGui:{INSTANCE:{onEnabled(){}}},Render3DKt:{submitTextAlwaysOnTop(...args){exact(args[2],args[3]);draws.push(['worldText',...args]);}},'Font$DisplayMode':{SEE_THROUGH:'see-through'},ScriptSetting:{INSTANCE:{boolean:setting,int:setting,float:setting,choose:o=>setting({...o,default:{getTag:()=>o.default}})}},
  EventManager:{INSTANCE:manager},EventHook:class{constructor(owner,priority,callback){Object.assign(this,{owner,priority,callback});}},EventListener:class{},Consumer:function(f){return f;},Component:{literal:component},PersistentLocalStorage:{INSTANCE:{getMap:()=>store}},ModuleNametags:tagsType,
  RenderedEntities:{INSTANCE:{iterator(){let i=0;return{hasNext:()=>i<entities.length,next:()=>entities[i++]};}}},EntityExtensionsKt:{getActualHealth:()=>20,hasHealthScoreboard:()=>false,getSimpleDisplayName:e=>({text:e===player?'ProtectedSelf':'ProtectedName'}),interpolateCurrentPosition:()=>vec(0,0,0)},WorldToScreen:{calculateScreenPos:()=>vec(500,100,.5)},
  FontManager:{INSTANCE:{fontFace:()=>{counters.fontLookups++;return{getRenderer:()=>font};}},getFONT_RENDERER:()=>font},Render2DKt:{class:{getMethods:()=>[{getName:()=> 'drawRoundedRect',getParameterCount:()=>arity}]},drawQuad(...args){exact(...args.slice(1,5));draws.push(['quad',...args]);},drawRoundedRect(...args){assert.equal(args.length,arity);exact(...args.slice(1,6),args.at(-1));draws.push(['rounded',...args]);}},Color4b:class{constructor(...values){this.values=values;}},InventoryScreen:{extractEntityInInventoryFollowsMouse(...args){assert.equal(args.length,10);exact(...args.slice(6,9));draws.push(['model',...args]);}},ModuleESP:{INSTANCE:{getColor:()=> 'actual-esp-color'}},System:{currentTimeMillis:()=>clock}
@@ -53,7 +62,7 @@ function host(arity=9,musicSupport=false){
    if(music.fail)throw new Error('bad music JAR');return serviceType;
   }close(){music.loaderCloses++;}};types.String={class:'java.lang.String'};
  }
- const context=vm.createContext({Java:{to:value=>Object.assign(value,{getClass:()=>Array}),type(name){const key=className(name);if(types[key])return types[key];if(/Event$/.test(key))return{class:key};throw new Error('Unknown host type '+name);},extend(){return class{constructor(options){Object.assign(this,options);}};}},mc,Client:{displayChatMessage:m=>messages.push(m)},registerScript(info){assert.equal(info.name,'OpaiBridge');return{on:(name,callback)=>events[name]=callback,registerCommand:info=>commands.set(info.name,info),registerModule(info,cb){let enabled=false;const handlers={};const registered={...info,getEnabled:()=>enabled,setEnabled:v=>{enabled=v;handlers[v?'enable':'disable']?.();emit('ModuleToggleEvent',{getModuleName:()=>info.name,getEnabled:()=>v});},on:(n,f)=>handlers[n]=f};modules.set(info.name,registered);cb(registered);}};},console});
+ const context=vm.createContext({Java:{to:value=>Object.assign(value,{getClass:()=>Array}),type(name){const key=className(name);if(types[key])return types[key];if(/Event$/.test(key))return{class:key};throw new Error('Unknown host type '+name);},extend(base){if(base===ToggleableValueGroup)return class extends base{constructor(...args){const overrides=args.pop();super(...args);Object.assign(this,overrides);}};return class{constructor(options){Object.assign(this,options);}};}},mc,Client:{displayChatMessage:m=>messages.push(m)},registerScript(info){assert.equal(info.name,'OpaiBridge');return{on:(name,callback)=>events[name]=callback,registerCommand:info=>commands.set(info.name,info),registerModule(info,cb){let enabled=false;const handlers={};const controls=Object.fromEntries(Object.entries(info.settings).map(([key,value])=>[key,value instanceof ToggleableValueGroup?value.getEnabledValue():value]));const registered={...info,controls,getEnabled:()=>enabled,setEnabled:v=>{enabled=v;handlers[v?'enable':'disable']?.();emit('ModuleToggleEvent',{getModuleName:()=>info.name,getEnabled:()=>v});},on:(n,f)=>handlers[n]=f};modules.set(info.name,registered);cb(registered);}};},console});
  vm.runInContext(source,context);
  return {types,counters,music,icmp,friends,entity,modules,commands,context,get registeredModule(){return modules.get('TritiumMusic');},events,emit,get store(){return store;},replaceStore(){const previous=store;store=makeStore();return previous;},draws,messages,mc,ctx,nativeTags,legacy,get hooks(){return hooks;},advance(t){clock+=t;},clock:()=>clock,setScreen(value){screen=value;}};
 }
@@ -71,6 +80,28 @@ test('auto-start registers the two native modules, provides real connection data
 test('world labels use projected coordinates, protected real names and three separate pills',()=>{
  const h=host();h.events.enable();h.emit('GameTickEvent',{});h.emit('GameTickEvent',{});h.emit('OverlayRenderEvent',{getTickDelta:()=>.5,getContext:()=>h.ctx});
  assert.equal(h.draws.filter(x=>x[0]==='rounded').length,3);const labels=h.draws.filter(x=>x[0]==='text').map(x=>x[2].text);assert.deepEqual(labels,['♥','20','ProtectedName','65m']);h.events.disable();
+});
+
+test('Anti-cheat exposes real native toggle groups with short nested names and hidden legacy keys',()=>{
+ const module=host().modules.get('Anti-cheat');
+ const visible=Object.values(module.settings).filter(value=>!value.hidden);
+ const groups=visible.filter(value=>value.getValueType?.()==='TOGGLEABLE');
+ assert.equal(groups.length,19);
+ assert(!visible.some(value=>value.getName().includes('Settings')));
+ assert.deepEqual(visible.filter(value=>!groups.includes(value)).map(value=>value.getName()),['FlagIntervalSeconds','AlertVL']);
+ for(const group of groups){
+  const children=group.getContainedValues();
+  assert.equal(children[0].getName(),'Enabled');
+  assert(children.length>1);
+  assert(!children.some(value=>value.getName().includes('Settings')));
+ }
+ const auto=module.settings.AutoThrow;
+ assert(auto.aliases.includes('AutoThrow'));
+ const window=auto.getContainedValues().find(value=>value.getName()==='Time Window (s)');
+ window.set(3.5);
+ assert.equal(module.controls.AutoThrowSettingsWindowSeconds.get(),3.5);
+ module.controls.AutoThrowSettingsWindowSeconds.set(4.5);
+ assert.equal(window.get(),4.5);
 });
 
 test('combat telemetry follows the attacked player and records only new hurt ticks', () => {
@@ -428,7 +459,7 @@ test('Auto Bow counts nearby arrows and direct hits once, excluding crossbows an
 });
 
 test('projectile controls enforce range, thresholds and disabled checks without world scans',()=>{
- const h=antiCheatHost(),settings=h.antiCheat.settings;
+ const h=antiCheatHost(),settings=h.antiCheat.controls;
  h.flight.ground=true;
  h.entity.getMainHandItem=()=>({getItem:()=>h.Items.BOW});
  h.antiCheat.setEnabled(true);h.tick(26);
@@ -463,7 +494,7 @@ test('Telly Scaffold recognizes rising placements in two short jumps',()=>{
 });
 
 test('Cheater VL and per-check VL are direct values and deletion clears accumulated evidence',()=>{
- const h=antiCheatHost(),settings=h.antiCheat.settings;
+ const h=antiCheatHost(),settings=h.antiCheat.controls;
  settings.alertVl.set(4);
  settings.AirHoverSettingsVL.set(2);
  h.antiCheat.setEnabled(true);
@@ -478,7 +509,7 @@ test('Cheater VL and per-check VL are direct values and deletion clears accumula
 });
 
 test('Reset VL clears total and check VL on schedule while preserving persistent player marks',()=>{
- const h=antiCheatHost(), settings=h.antiCheat.settings, events=[];
+ const h=antiCheatHost(), settings=h.antiCheat.controls, events=[];
  settings.alertVl.set(1);
  settings.resetVl.set(true);
  settings.resetSeconds.set(5);
@@ -553,7 +584,7 @@ test('watch links switch and restore the camera, keep one exit at the bottom, an
 });
 
 test('Anti-cheat settings separate check VL, debounce flags, and apply the extra VL threshold',()=>{
- const h=antiCheatHost(), settings=h.antiCheat.settings;
+ const h=antiCheatHost(), settings=h.antiCheat.controls;
  assert.deepEqual(Object.keys(settings).filter(key=>!['extraVl','flagInterval','alertVl','resetVl','resetSeconds'].includes(key)&&!key.includes('Settings')),['AutoBlock','LegitScaffold','Scaffold','ScaffoldBPS','TellyScaffold','NoSlow','Nuker','BedNuker','AirHover','GroundSpeed','AimAssist','AutoClicker','Blink','FastMine','NoFall','Protocol','AutoThrow','AutoBow']);
  assert(settings.AimAssist.get() && settings.AutoClicker.get());
  for(const name of ['Blink','FastMine','NoFall','Protocol'])assert.equal(settings[name].get(),false);
@@ -578,7 +609,7 @@ test('Anti-cheat settings separate check VL, debounce flags, and apply the extra
 });
 
 test('OpenB4-style NoSlow, AimAssist, Blink, AutoClicker and NoFall require repeated or sustained evidence',()=>{
- const h=antiCheatHost(), settings=h.antiCheat.settings;
+ const h=antiCheatHost(), settings=h.antiCheat.controls;
  h.flight.ground=true;h.antiCheat.setEnabled(true);
  for(const name of ['AimAssist','Blink','AutoClicker','NoFall'])settings[name].set(true);
  h.tick(24);
@@ -614,7 +645,7 @@ test('Scaffold movement pattern requires distinct placements over open space whi
 });
 
 test('mining checks correlate server removals with the matching player animation',()=>{
- const h=antiCheatHost();h.antiCheat.setEnabled(true);h.antiCheat.settings.FastMine.set(true);h.flight.ground=true;h.tick(24);
+ const h=antiCheatHost();h.antiCheat.setEnabled(true);h.antiCheat.controls.FastMine.set(true);h.flight.ground=true;h.tick(24);
  const air={isAir:()=>true,isSolidRender:()=>false};
  const animation=(pos,progress,id=42)=>h.packet(h.BreakPacket,{getId:()=>id,getPos:()=>pos,getProgress:()=>progress});
  const remove=(pos,batch=false)=>{

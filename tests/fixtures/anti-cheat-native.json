@@ -1,0 +1,1175 @@
+{
+  "name": "Anti-cheat",
+  "value": [
+    {
+      "range": {
+        "from": 0.0,
+        "to": 30.0
+      },
+      "suffix": "",
+      "name": "FlagIntervalSeconds",
+      "valueType": "FLOAT",
+      "value": 0.75
+    },
+    {
+      "range": {
+        "from": 1,
+        "to": 1000
+      },
+      "suffix": "",
+      "name": "AlertVL",
+      "valueType": "INT",
+      "value": 11
+    },
+    {
+      "name": "Reset VL",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": false
+        },
+        {
+          "range": {
+            "from": 5,
+            "to": 600
+          },
+          "suffix": "",
+          "name": "Reset Interval (s)",
+          "valueType": "INT",
+          "value": 30
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Auto Block",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 3,
+            "to": 30
+          },
+          "suffix": "",
+          "name": "Min Swings",
+          "valueType": "INT",
+          "value": 7
+        },
+        {
+          "range": {
+            "from": 2.0,
+            "to": 20.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 9.0
+        },
+        {
+          "range": {
+            "from": 0.1,
+            "to": 2.0
+          },
+          "suffix": "",
+          "name": "Block Time (s)",
+          "valueType": "FLOAT",
+          "value": 0.5
+        },
+        {
+          "range": {
+            "from": 0.5,
+            "to": 1.0
+          },
+          "suffix": "",
+          "name": "Blocking Ratio",
+          "valueType": "FLOAT",
+          "value": 0.85
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Eagle",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 3,
+            "to": 12
+          },
+          "suffix": "",
+          "name": "Min Cycles",
+          "valueType": "INT",
+          "value": 5
+        },
+        {
+          "range": {
+            "from": 2.0,
+            "to": 15.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 7.0
+        },
+        {
+          "range": {
+            "from": 20,
+            "to": 250
+          },
+          "suffix": "",
+          "name": "Timing Spread (ms)",
+          "valueType": "INT",
+          "value": 85
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Scaffold",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 3,
+            "to": 20
+          },
+          "suffix": "",
+          "name": "Min Blocks",
+          "valueType": "INT",
+          "value": 4
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 8.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 2.0
+        },
+        {
+          "range": {
+            "from": 40.0,
+            "to": 85.0
+          },
+          "suffix": "",
+          "name": "Min Pitch",
+          "valueType": "FLOAT",
+          "value": 65.0
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Scaffold BPS",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 20.0
+          },
+          "suffix": "",
+          "name": "Max BPS",
+          "valueType": "FLOAT",
+          "value": 3.5
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 5.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 2.0
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Telly Scaffold",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 2,
+            "to": 8
+          },
+          "suffix": "",
+          "name": "Min Jumps",
+          "valueType": "INT",
+          "value": 2
+        },
+        {
+          "range": {
+            "from": 3,
+            "to": 20
+          },
+          "suffix": "",
+          "name": "Min Blocks",
+          "valueType": "INT",
+          "value": 3
+        },
+        {
+          "range": {
+            "from": 2.0,
+            "to": 10.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 4.5
+        },
+        {
+          "range": {
+            "from": 0.3,
+            "to": 2.0
+          },
+          "suffix": "",
+          "name": "Jump Travel",
+          "valueType": "FLOAT",
+          "value": 0.55
+        },
+        {
+          "range": {
+            "from": 0.5,
+            "to": 2.0
+          },
+          "suffix": "",
+          "name": "Jump Time (s)",
+          "valueType": "FLOAT",
+          "value": 1.1
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "No Slow",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 10.0
+          },
+          "suffix": "",
+          "name": "Min Speed (BPS)",
+          "valueType": "FLOAT",
+          "value": 1.9
+        },
+        {
+          "range": {
+            "from": 0.2,
+            "to": 3.0
+          },
+          "suffix": "",
+          "name": "Hold Time (s)",
+          "valueType": "FLOAT",
+          "value": 0.45
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Nuker",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 2,
+            "to": 12
+          },
+          "suffix": "",
+          "name": "Min Breaks",
+          "valueType": "INT",
+          "value": 2
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 10.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 4.0
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Bed Nuker",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 5
+          },
+          "suffix": "",
+          "name": "Min Breaks",
+          "valueType": "INT",
+          "value": 1
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 10.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 4.0
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Air Hover",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 0.4,
+            "to": 4.0
+          },
+          "suffix": "",
+          "name": "Hold Time (s)",
+          "valueType": "FLOAT",
+          "value": 0.8
+        },
+        {
+          "range": {
+            "from": 0.005,
+            "to": 0.1
+          },
+          "suffix": "",
+          "name": "Vertical Step",
+          "valueType": "FLOAT",
+          "value": 0.025
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Ground Speed",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 0.4,
+            "to": 4.0
+          },
+          "suffix": "",
+          "name": "Hold Time (s)",
+          "valueType": "FLOAT",
+          "value": 0.8
+        },
+        {
+          "range": {
+            "from": 7.0,
+            "to": 25.0
+          },
+          "suffix": "",
+          "name": "Min Speed (BPS)",
+          "valueType": "FLOAT",
+          "value": 10.0
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Aim Assist",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 8,
+            "to": 60
+          },
+          "suffix": "",
+          "name": "Smooth Ticks",
+          "valueType": "INT",
+          "value": 18
+        },
+        {
+          "range": {
+            "from": 2,
+            "to": 12
+          },
+          "suffix": "",
+          "name": "Min Snaps",
+          "valueType": "INT",
+          "value": 3
+        },
+        {
+          "range": {
+            "from": 2.0,
+            "to": 10.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 4.5
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 15.0
+          },
+          "suffix": "",
+          "name": "Aim Angle",
+          "valueType": "FLOAT",
+          "value": 5.0
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Auto Clicker",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 6,
+            "to": 40
+          },
+          "suffix": "",
+          "name": "Min Swings",
+          "valueType": "INT",
+          "value": 9
+        },
+        {
+          "range": {
+            "from": 0.8,
+            "to": 4.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 1.5
+        },
+        {
+          "range": {
+            "from": 8.0,
+            "to": 25.0
+          },
+          "suffix": "",
+          "name": "Max CPS",
+          "valueType": "FLOAT",
+          "value": 13.33
+        },
+        {
+          "range": {
+            "from": 5,
+            "to": 40
+          },
+          "suffix": "",
+          "name": "Timing Spread (ms)",
+          "valueType": "INT",
+          "value": 20
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Blink",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": false
+        },
+        {
+          "range": {
+            "from": 2,
+            "to": 8
+          },
+          "suffix": "",
+          "name": "Min Bursts",
+          "valueType": "INT",
+          "value": 2
+        },
+        {
+          "range": {
+            "from": 3.0,
+            "to": 20.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 10.0
+        },
+        {
+          "range": {
+            "from": 0.4,
+            "to": 2.0
+          },
+          "suffix": "",
+          "name": "Min Step",
+          "valueType": "FLOAT",
+          "value": 0.7
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Fast Mine",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": false
+        },
+        {
+          "range": {
+            "from": 2,
+            "to": 12
+          },
+          "suffix": "",
+          "name": "Min Breaks",
+          "valueType": "INT",
+          "value": 3
+        },
+        {
+          "range": {
+            "from": 2.0,
+            "to": 12.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 5.0
+        },
+        {
+          "range": {
+            "from": 75,
+            "to": 350
+          },
+          "suffix": "",
+          "name": "Break Time (ms)",
+          "valueType": "INT",
+          "value": 150
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "No Fall",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": false
+        },
+        {
+          "range": {
+            "from": 4.0,
+            "to": 12.0
+          },
+          "suffix": "",
+          "name": "Min Drop",
+          "valueType": "FLOAT",
+          "value": 5.0
+        },
+        {
+          "range": {
+            "from": 0.3,
+            "to": 2.0
+          },
+          "suffix": "",
+          "name": "Wait Time (s)",
+          "valueType": "FLOAT",
+          "value": 0.5
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Protocol",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": false
+        },
+        {
+          "range": {
+            "from": 90.0,
+            "to": 100.0
+          },
+          "suffix": "",
+          "name": "Max Pitch",
+          "valueType": "FLOAT",
+          "value": 90.0
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Auto Throw",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 8.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 2.5
+        },
+        {
+          "range": {
+            "from": 3,
+            "to": 30
+          },
+          "suffix": "",
+          "name": "Min Throws",
+          "valueType": "INT",
+          "value": 6
+        },
+        {
+          "range": {
+            "from": 1.0,
+            "to": 15.0
+          },
+          "suffix": "",
+          "name": "Max per Second",
+          "valueType": "FLOAT",
+          "value": 3.0
+        },
+        {
+          "range": {
+            "from": 0.2,
+            "to": 2.0
+          },
+          "suffix": "",
+          "name": "Lock Time (s)",
+          "valueType": "FLOAT",
+          "value": 0.6
+        },
+        {
+          "range": {
+            "from": 3.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Aim Angle",
+          "valueType": "FLOAT",
+          "value": 12.0
+        },
+        {
+          "range": {
+            "from": 0.5,
+            "to": 1.0
+          },
+          "suffix": "",
+          "name": "Lock Ratio",
+          "valueType": "FLOAT",
+          "value": 0.8
+        },
+        {
+          "range": {
+            "from": 8.0,
+            "to": 96.0
+          },
+          "suffix": "",
+          "name": "Range",
+          "valueType": "FLOAT",
+          "value": 40.0
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    },
+    {
+      "name": "Auto Bow",
+      "value": [
+        {
+          "name": "Enabled",
+          "valueType": "BOOLEAN",
+          "value": true
+        },
+        {
+          "range": {
+            "from": 2.0,
+            "to": 10.0
+          },
+          "suffix": "",
+          "name": "Time Window (s)",
+          "valueType": "FLOAT",
+          "value": 4.0
+        },
+        {
+          "range": {
+            "from": 3,
+            "to": 30
+          },
+          "suffix": "",
+          "name": "Min Arrows",
+          "valueType": "INT",
+          "value": 5
+        },
+        {
+          "range": {
+            "from": 0.5,
+            "to": 8.0
+          },
+          "suffix": "",
+          "name": "Max per Second",
+          "valueType": "FLOAT",
+          "value": 1.5
+        },
+        {
+          "range": {
+            "from": 3.0,
+            "to": 48.0
+          },
+          "suffix": "",
+          "name": "Min Distance",
+          "valueType": "FLOAT",
+          "value": 8.0
+        },
+        {
+          "range": {
+            "from": 12.0,
+            "to": 96.0
+          },
+          "suffix": "",
+          "name": "Range",
+          "valueType": "FLOAT",
+          "value": 48.0
+        },
+        {
+          "range": {
+            "from": 2.0,
+            "to": 12.0
+          },
+          "suffix": "",
+          "name": "Target Radius",
+          "valueType": "FLOAT",
+          "value": 6.0
+        },
+        {
+          "range": {
+            "from": 0.0,
+            "to": 30.0
+          },
+          "suffix": "",
+          "name": "Flag Interval (s)",
+          "valueType": "FLOAT",
+          "value": 0.75
+        },
+        {
+          "range": {
+            "from": 1,
+            "to": 10
+          },
+          "suffix": "",
+          "name": "VL per Flag",
+          "valueType": "INT",
+          "value": 1
+        }
+      ],
+      "valueType": "TOGGLEABLE"
+    }
+  ],
+  "valueType": "CONFIGURABLE"
+}
