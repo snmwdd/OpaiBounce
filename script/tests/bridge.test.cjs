@@ -8,7 +8,7 @@ function host(arity=9,musicSupport=false){
  const friends=new Set();
  const icmp={samples:[],resets:0,closes:0,result:37};
  const music={starts:0,closes:0,loaderCloses:0,fail:false,configs:[],opens:0,clears:0,worldCalls:0,worldScene:[]};
- let clock=100000,enabled=false,hooks=[],draws=[],messages=[];const modules=new Map(),events={};
+ let clock=100000,enabled=false,hooks=[],draws=[],messages=[];const modules=new Map(),commands=new Map(),events={};
  const makeStore=()=>{const value=new Map();value.put=(key,item)=>value.set(key,item);value.remove=key=>value.delete(key);return value;};let store=makeStore();
  const legacy={handler:'legacy'};hooks.push({event:'OverlayRenderEvent',hook:legacy});
  const emit=(event,data)=>{if(event==='GameTickEvent')clock+=50;for(const h of [...hooks].filter(h=>h.event===event).sort((a,b)=>b.hook.priority-a.hook.priority))if(h.hook!==legacy){const callback=h.hook.callback;if(typeof callback==='function')callback(data);else callback.accept(data);}};
@@ -22,8 +22,13 @@ function host(arity=9,musicSupport=false){
  const font={getHeight:()=>43,getScaleToVanillaFont:()=>9/43,getStringWidth:(component,scale)=>{counters.widths++;exact(scale);return component.text.length*20*scale;},draw(...args){assert.equal(args.length,9);exact(args[2],args[3],args[6]);draws.push(['text',...args]);}};
  const ctx={},mc={player,level:{},gameRenderer:{mainCamera:()=>({position:()=>vec(0,0,0)})},gui:{screen:()=>screen},getWindow:()=>({getGuiScaledWidth:()=>1000,getGuiScaledHeight:()=>550}),hasSingleplayerServer:()=>false,getCurrentServer:()=>({ip:'play.example.org:25565'}),getConnection:()=>({getConnection:()=>({getRemoteAddress:()=>({getAddress:()=>({getHostAddress:()=> '203.0.113.10'})})}),getPlayerInfo:()=>({getLatency:()=>37})})};
  const className=name=>name.split('.').at(-1);
- const setting=o=>{let v=o.default;return{get:()=>v,set:n=>v=n};};
- function component(text,color=null) {return {text,color,parts:[],getVisualOrderText:()=>({text}),withColor:rgb=>component(text,rgb),equals:other=>other?.text===text&&other?.color===color,append(part){this.text+=part.text;this.parts.push(part);return this;},
+ const setting=o=>{
+  let v=o.default;const callbacks=[];
+  const setting={...o,get:()=>v,set:n=>{v=n;callbacks.forEach(callback=>callback(n));},
+   notAnOption:()=>setting,onChanged:callback=>{callbacks.push(callback);return setting;}};
+  return setting;
+ };
+ function component(text,color=null) {return {text,color,parts:[],getString(){return this.text;},getVisualOrderText:()=>({text}),withColor:rgb=>component(text,rgb),equals:other=>other?.text===text&&other?.color===color,append(part){this.text+=part.text;this.parts.push(part);return this;},
   getStyle(){return {withUnderlined(){return this;},withClickEvent:click=>({click})};},setStyle(style){this.click=style.click;return this;}};}
  const types={FriendManager:{INSTANCE:{isFriend:entity=>friends.has(entity)}},ModuleClickGui:{INSTANCE:{onEnabled(){}}},Render3DKt:{submitTextAlwaysOnTop(...args){exact(args[2],args[3]);draws.push(['worldText',...args]);}},'Font$DisplayMode':{SEE_THROUGH:'see-through'},ScriptSetting:{INSTANCE:{boolean:setting,int:setting,float:setting,choose:o=>setting({...o,default:{getTag:()=>o.default}})}},
  EventManager:{INSTANCE:manager},EventHook:class{constructor(owner,priority,callback){Object.assign(this,{owner,priority,callback});}},EventListener:class{},Consumer:function(f){return f;},Component:{literal:component},PersistentLocalStorage:{INSTANCE:{getMap:()=>store}},ModuleNametags:tagsType,
@@ -48,9 +53,9 @@ function host(arity=9,musicSupport=false){
    if(music.fail)throw new Error('bad music JAR');return serviceType;
   }close(){music.loaderCloses++;}};types.String={class:'java.lang.String'};
  }
- const context=vm.createContext({Java:{to:value=>Object.assign(value,{getClass:()=>Array}),type(name){const key=className(name);if(types[key])return types[key];if(/Event$/.test(key))return{class:key};throw new Error('Unknown host type '+name);},extend(){return class{constructor(options){Object.assign(this,options);}};}},mc,Client:{displayChatMessage:m=>messages.push(m)},registerScript(info){assert.equal(info.name,'OpaiBridge');return{on:(name,callback)=>events[name]=callback,registerModule(info,cb){let enabled=false;const handlers={};const registered={...info,getEnabled:()=>enabled,setEnabled:v=>{enabled=v;handlers[v?'enable':'disable']?.();emit('ModuleToggleEvent',{getModuleName:()=>info.name,getEnabled:()=>v});},on:(n,f)=>handlers[n]=f};modules.set(info.name,registered);cb(registered);}};},console});
+ const context=vm.createContext({Java:{to:value=>Object.assign(value,{getClass:()=>Array}),type(name){const key=className(name);if(types[key])return types[key];if(/Event$/.test(key))return{class:key};throw new Error('Unknown host type '+name);},extend(){return class{constructor(options){Object.assign(this,options);}};}},mc,Client:{displayChatMessage:m=>messages.push(m)},registerScript(info){assert.equal(info.name,'OpaiBridge');return{on:(name,callback)=>events[name]=callback,registerCommand:info=>commands.set(info.name,info),registerModule(info,cb){let enabled=false;const handlers={};const registered={...info,getEnabled:()=>enabled,setEnabled:v=>{enabled=v;handlers[v?'enable':'disable']?.();emit('ModuleToggleEvent',{getModuleName:()=>info.name,getEnabled:()=>v});},on:(n,f)=>handlers[n]=f};modules.set(info.name,registered);cb(registered);}};},console});
  vm.runInContext(source,context);
- return {types,counters,music,icmp,friends,entity,modules,context,get registeredModule(){return modules.get('TritiumMusic');},events,emit,get store(){return store;},replaceStore(){const previous=store;store=makeStore();return previous;},draws,messages,mc,ctx,nativeTags,legacy,get hooks(){return hooks;},advance(t){clock+=t;},clock:()=>clock,setScreen(value){screen=value;}};
+ return {types,counters,music,icmp,friends,entity,modules,commands,context,get registeredModule(){return modules.get('TritiumMusic');},events,emit,get store(){return store;},replaceStore(){const previous=store;store=makeStore();return previous;},draws,messages,mc,ctx,nativeTags,legacy,get hooks(){return hooks;},advance(t){clock+=t;},clock:()=>clock,setScreen(value){screen=value;}};
 }
 test('validates preview protocol, lease, bounds, numeric values and scaled viewport',()=>{
  const request={protocol:1,at:100,module:'ESP',viewport:{width:2000,height:1100},rect:{x:1500,y:200,width:400,height:600}};
@@ -60,12 +65,45 @@ test('validates preview protocol, lease, bounds, numeric values and scaled viewp
 });
 test('auto-start registers the two native modules, provides real connection data, and cleans up on unload/reload',()=>{
  const modules=host().modules;assert.deepEqual([...modules.keys()],['TritiumMusic','Anti-cheat']);assert.equal(modules.get('Anti-cheat').category,'Misc');assert.equal(modules.get('Anti-cheat').getEnabled(),false);
- const h=host();h.events.enable();h.emit('GameTickEvent',{});assert.equal(h.nativeTags.getEnabled(),true);assert.equal(h.hooks.length,5);const data=JSON.parse(h.store.get('opai.bridge.snapshot'));assert.equal(data.serverAddress,'play.example.org:25565');assert.equal(data.ping,null);assert.equal(data.pingSource,'icmp');assert.equal(data.serverIP,'203.0.113.10');assert.equal(data.capabilities.nametags,true);
- h.events.enable();h.emit('GameTickEvent',{});assert.equal(h.hooks.length,5);h.events.disable();assert.equal(h.hooks.length,1);assert.equal(h.hooks[0].hook,h.legacy);assert.equal(h.nativeTags.getEnabled(),false);assert.equal(h.store.has('opai.bridge.snapshot'),false);h.events.enable();h.emit('GameTickEvent',{});h.events.disable();assert.equal(h.hooks.length,1);
+ const h=host();h.events.enable();h.emit('GameTickEvent',{});assert.equal(h.nativeTags.getEnabled(),true);assert.equal(h.hooks.length,6);const data=JSON.parse(h.store.get('opai.bridge.snapshot'));assert.equal(data.serverAddress,'play.example.org:25565');assert.equal(data.ping,null);assert.equal(data.pingSource,'icmp');assert.equal(data.serverIP,'203.0.113.10');assert.equal(data.capabilities.nametags,true);
+ h.events.enable();h.emit('GameTickEvent',{});assert.equal(h.hooks.length,6);h.events.disable();assert.equal(h.hooks.length,1);assert.equal(h.hooks[0].hook,h.legacy);assert.equal(h.nativeTags.getEnabled(),false);assert.equal(h.store.has('opai.bridge.snapshot'),false);h.events.enable();h.emit('GameTickEvent',{});h.events.disable();assert.equal(h.hooks.length,1);
 });
 test('world labels use projected coordinates, protected real names and three separate pills',()=>{
  const h=host();h.events.enable();h.emit('GameTickEvent',{});h.emit('GameTickEvent',{});h.emit('OverlayRenderEvent',{getTickDelta:()=>.5,getContext:()=>h.ctx});
  assert.equal(h.draws.filter(x=>x[0]==='rounded').length,3);const labels=h.draws.filter(x=>x[0]==='text').map(x=>x[2].text);assert.deepEqual(labels,['♥','20','ProtectedName','65m']);h.events.disable();
+});
+
+test('combat telemetry follows the attacked player and records only new hurt ticks', () => {
+ const h = host();
+ let hurtTime = 7;
+ class Player {
+  getUUID() { return 'target'; }
+  level() { return h.mc.level; }
+  isRemoved() { return false; }
+  onGround() { return true; }
+  get tickCount() { return 418; }
+  get hurtTime() { return hurtTime; }
+ }
+ h.types.Player = Player;
+ h.mc.player.hasLineOfSight = () => false;
+ const entity = new Player();
+ const latest = () => JSON.parse(h.store.get('opai.bridge.snapshot')).combatTarget;
+ const tick = () => { for (let i = 0; i < 5; i++) h.emit('GameTickEvent', {}); };
+ h.events.enable();
+ h.emit('AttackEntityEvent', {getEntity: () => entity});
+ tick();
+ assert.deepEqual(latest(), {uuid:'target', health:20, grounded:true, visible:false, age:418, hurtTime:7, lastHitAt:0});
+ hurtTime = 10;
+ tick();
+ const hit = latest().lastHitAt;
+ assert(hit > 0);
+ hurtTime = 4;
+ tick();
+ assert.equal(latest().lastHitAt, hit);
+ tick();
+ tick();
+ assert.equal(latest(), null);
+ h.events.disable();
 });
 
 test('native nametags keep their original background with a legacy HUD preference',()=>{
@@ -89,6 +127,16 @@ function antiCheatHost() {
  const ordinaryBlock={getFriction:()=>.6,getSpeedFactor:()=>1,equals:other=>other===ordinaryBlock};
  class BlockItem{getBlock(){return ordinaryBlock;}}
  const emptyHand={getItem:()=>null,getDestroySpeed:()=>1};
+ const projectiles = [], projectileCounters = {queries:0};
+ let damageSource = null;
+ class Projectile {}
+ Projectile.class = Projectile;
+ class Arrow extends Projectile {}
+ class Throwable extends Projectile {}
+ class Trident extends Arrow {}
+ class WindCharge extends Projectile {}
+ class Fireball extends Projectile {}
+ const Items = {BOW:'bow',CROSSBOW:'crossbow',SNOWBALL:'snowball'};
  let terrain='flat';
  const point=(x,y,z)=>({getX:()=>Math.floor(x),getY:()=>Math.floor(y),getZ:()=>Math.floor(z),x:()=>x,y:()=>y,z:()=>z,
   offset:(dx,dy,dz)=>point(x+dx,y+dy,z+dz),relative:({dx,dy,dz})=>point(x+dx,y+dy,z+dz)});
@@ -103,6 +151,7 @@ function antiCheatHost() {
   getUseItem:()=>({getUseAnimation:()=>flight.sword?'NONE':'BLOCK',typeHolder:()=>({is:tag=>tag==='swords'&&flight.sword})}),
   getMainHandItem:()=>flight.blockHeld?{getItem:()=>new BlockItem()}:emptyHand,getOffhandItem:()=>emptyHand,
   getYRot:()=>flight.yaw,getXRot:()=>flight.pitch,isSprinting:()=>flight.sprint,isRemoved:()=>!loaded,blockPosition:()=>point(points.x,points.y,points.z),
+  getEyeY:()=>points.y+1.6,getViewVector:()=>point(-Math.sin(flight.yaw*Math.PI/180)*Math.cos(flight.pitch*Math.PI/180),-Math.sin(flight.pitch*Math.PI/180),Math.cos(flight.yaw*Math.PI/180)*Math.cos(flight.pitch*Math.PI/180)),
  });
  Object.defineProperty(e,'hurtTime',{get:()=>flight.hurt});
  class Packet {constructor(values){Object.assign(this,values);}}
@@ -111,6 +160,7 @@ function antiCheatHost() {
  const directions=[{dx:1,dy:0,dz:0},{dx:-1,dy:0,dz:0},{dx:0,dy:1,dz:0},{dx:0,dy:-1,dz:0},{dx:0,dy:0,dz:1},{dx:0,dy:0,dz:-1}];
  for(const d of directions)d.getOpposite=()=>directions.find(o=>o.dx===-d.dx&&o.dy===-d.dy&&o.dz===-d.dz);
  Object.assign(h.types,{
+  Projectile,AbstractArrow:Arrow,ThrowableProjectile:Throwable,ThrownTrident:Trident,WindCharge,Fireball,Items,
   BlockPos:{containing:(x,y,z)=>typeof x==='number'?point(x,y,z):point(x.x(),x.y(),x.z())},MobEffects:{},Attributes:{SAFE_FALL_DISTANCE:'safeFall',FALL_DAMAGE_MULTIPLIER:'fallDamage',BLOCK_BREAK_SPEED:'breakSpeed'},BlockItem,ItemTags:{SWORDS:'swords'},
   ClientChat:{chat:(component,metadata)=>{const id=metadata.args[1];if(id)removeChat(null,id);chatLines.unshift({id,component,'liquid_bounce$getId':()=>id});if(!id)chat.push({text:component.text,color:component.color,parts:component.parts.map(p=>[p.text,p.color])});}},
   MessageMetadata:class{constructor(...args){this.args=args;}},
@@ -124,7 +174,8 @@ function antiCheatHost() {
  });
  function removeChat(_chat,id){for(let i=chatLines.length-1;i>=0;i--)if(chatLines[i].id===id)chatLines.splice(i,1);}
  const connection=h.mc.getConnection();
- Object.assign(h.mc.player,{getX:()=>0,getY:()=>64,getZ:()=>30,getMainHandItem:()=>emptyHand,getOffhandItem:()=>emptyHand,isRemoved:()=>false});
+ Object.assign(h.mc.player,{getX:()=>0,getY:()=>64,getEyeY:()=>65.6,getZ:()=>30,getMainHandItem:()=>emptyHand,getOffhandItem:()=>emptyHand,isRemoved:()=>false,
+  getName:()=>h.types.Component.literal('LocalPlayer'),getBoundingBox:()=>box,getLastDamageSource:()=>damageSource});
  Object.assign(h.mc,{getCameraEntity:()=>camera,setCameraEntity:entity=>{camera=entity;}});
  h.mc.gui.hud={getChat:()=>chatLines};
  const listIterator=entries=>{let i=0;return{hasNext:()=>i<entries.length,next:()=>entries[i++]};};
@@ -132,6 +183,7 @@ function antiCheatHost() {
   getListedOnlinePlayers:()=>({iterator:()=>listIterator(listed)})};
  h.mc.getConnection=()=>packetListener;
  Object.assign(h.mc.level,{
+  getEntitiesOfClass:(Class, bounds)=>{assert.equal(Class,Projectile);assert(bounds);projectileCounters.queries++;return{iterator:()=>listIterator(projectiles)};},
   players:()=>{const list=loaded?[h.mc.player,e]:[h.mc.player];return{iterator:()=>({hasNext:()=>!!list.length,next:()=>list.shift()})};},
   hasChunkAt:()=>true,hasChunksAt:()=>true,noCollision:()=>terrain!=='obstruction',containsAnyLiquid:()=>false,getEntity:id=>id===42?e:null,
   getBlockState:pos=>{
@@ -146,7 +198,9 @@ function antiCheatHost() {
  const draw=()=>{h.draws.length=0;h.emit('OverlayRenderEvent',{getTickDelta:()=>.5,getContext:()=>h.ctx});return h.draws;};
  const place=(x,z,y=63)=>h.emit('BlockChangeEvent',{getBlockPos:()=>point(x,y,z),getNewState:()=>({isSolidRender:()=>true,getBlock:()=>ordinaryBlock})});
  const packet=(Type,values,origin='incoming',isCancelled=()=>false)=>h.emit('PacketEvent',{getOrigin:()=>origin,getPacket:()=>new Type(values),isCancelled});
- return {...h,get hooks(){return h.hooks;},points,flight,chat,chatLines,listed,addTabEntry,packetListener,placed,tick,draw,place,packet,point,blocks,directions,BreakPacket,BlockPacket,ChunkPacket,MovePacket,SwingPacket,antiCheat:h.modules.get('Anti-cheat'),setLoaded:value=>{loaded=value;},setTerrain:value=>{terrain=value;}};
+ return {...h,get hooks(){return h.hooks;},points,flight,chat,chatLines,listed,addTabEntry,packetListener,placed,tick,draw,place,packet,point,blocks,directions,BreakPacket,BlockPacket,ChunkPacket,MovePacket,SwingPacket,
+  projectiles,projectileCounters,Projectile,Arrow,Throwable,Trident,WindCharge,Items,setDamage:value=>damageSource=value,
+  antiCheat:h.modules.get('Anti-cheat'),setLoaded:value=>{loaded=value;},setTerrain:value=>{terrain=value;}};
 }
 
 test('Anti-cheat crosses at VL 11 and keeps its red skull after VL decay and world changes',()=>{
@@ -154,13 +208,13 @@ test('Anti-cheat crosses at VL 11 and keeps its red skull after VL decay and wor
  h.tick(40,.2);assert.deepEqual(h.chat,[]);
  h.antiCheat.setEnabled(true);
  for(let i=0;i<280&&h.chat.length<10;i++)h.tick(1,.2);
- assert.equal(h.chat.at(-1).text,'[Anti-Cheat] OtherPlayer failed Air Hover (vl:10.0) [观看玩家] 0.00 Δy');
+ assert.equal(h.chat.at(-1).text,'[Anti-Cheat] OtherPlayer failed Air Hover (vl:10.0) [Watch] 0.00 Δy');
  assert.equal(h.draw().filter(d=>d[0]==='rounded').length,3);
  h.friends.add(h.entity);
  h.tick(40,.2);
  assert.deepEqual(h.chat.slice(10,14).map(message=>message.text),[
-  '[Anti-Cheat] OtherPlayer failed Air Hover (vl:11.0) [观看玩家] 0.00 Δy',
-  ...Array(3).fill('[Anti-Cheat] OtherPlayer 疑似是黑客 (vl:11.0)'),
+  '[Anti-Cheat] OtherPlayer failed Air Hover (vl:11.0) [Watch] 0.00 Δy',
+  ...Array(3).fill('[Anti-Cheat] OtherPlayer is a suspected cheater (vl:11.0)'),
  ]);
  assert.deepEqual(h.chat[10].parts.slice(0,5),[['Anti-Cheat',0x55ffff],['] OtherPlayer',0xaaaaaa],[' failed ',0xffffff],['Air Hover',0x55ffff],[' (vl:11.0)',0xffffff]]);
  h.tick(30,.2);assert.equal(h.chat.filter(m=>m.color===0xff5555).length,3);
@@ -220,7 +274,7 @@ test('Anti-cheat ignores normal movement, a position jump, creative, recent dama
  h.flight.creative=false;h.flight.ground=false;h.tick(40,.2,.12);
  h.setTerrain('obstruction');h.tick(40,.2);assert.deepEqual(h.chat,[]);
  h.setTerrain('flat');h.flight.ground=true;h.tick(35,.8);
- assert.equal(h.chat[0]?.text,'[Anti-Cheat] OtherPlayer failed Ground Speed (vl:1.0) [观看玩家] 16.00 b/s');
+ assert.equal(h.chat[0]?.text,'[Anti-Cheat] OtherPlayer failed Ground Speed (vl:1.0) [Watch] 16.00 b/s');
  h.events.disable();
 });
 
@@ -237,7 +291,7 @@ test('Eagle Pattern requires repeatable sneak cycles at consecutive newly placed
  for(let i=1;i<=4;i++){h.points.x=i-.35;h.tick();bridge(i);}
  assert.deepEqual(h.chat,[]);
  h.points.x=4.65;h.tick();bridge(5);
- assert.deepEqual(h.chat.map(message=>message.text),['[Anti-Cheat] OtherPlayer failed Legit Scaffold (vl:1.0) [观看玩家] 5 cycles / 150ms']);
+ assert.deepEqual(h.chat.map(message=>message.text),['[Anti-Cheat] OtherPlayer failed Eagle (vl:1.0) [Watch] 5 cycles / 150ms']);
  for(let i=6;i<=11;i++){h.points.x=i-.35;h.tick();bridge(i,i%2?4:1);}
  assert.equal(h.chat.length,1,'irregular crouch times should not add VL');h.events.disable();
 });
@@ -250,10 +304,10 @@ test('AutoBlock requires a high proportion of repeated swings during sustained b
  assert.deepEqual(h.chat,[]);
  h.advance(9500);h.tick(15);
  for(let i=0;i<7;i++)swing();
- assert.deepEqual(h.chat.map(message=>message.text),['[Anti-Cheat] OtherPlayer failed AutoBlock (vl:1.0) [观看玩家] 7/7 swings']);
+ assert.deepEqual(h.chat.map(message=>message.text),['[Anti-Cheat] OtherPlayer failed Auto Block (vl:1.0) [Watch] 7/7 swings']);
  h.antiCheat.setEnabled(false);h.antiCheat.setEnabled(true);h.flight.sword=true;h.tick(15);
  for(let i=0;i<7;i++)swing();
- assert.equal(h.chat.at(-1).text,'[Anti-Cheat] OtherPlayer failed AutoBlock (vl:1.0) [观看玩家] 7/7 swings');assert.equal(h.chat.length,2);
+ assert.equal(h.chat.at(-1).text,'[Anti-Cheat] OtherPlayer failed Auto Block (vl:1.0) [Watch] 7/7 swings');assert.equal(h.chat.length,2);
  h.events.disable();
 });
 
@@ -278,7 +332,7 @@ test('Scaffold BPS flags the eighth distinct block in two seconds and ignores ex
   h.place(x,z);h.tick(4,.25);
   if(i===6)assert(!h.chat.some(line=>line.text.includes('Scaffold BPS')));
  }
- assert(h.chat.some(line=>line.text.includes('Scaffold BPS (vl:1.0) [观看玩家] 4.00 b/s')));
+ assert(h.chat.some(line=>line.text.includes('Scaffold BPS (vl:1.0) [Watch] 4.00 b/s')));
  h.events.disable();
 });
 
@@ -301,30 +355,206 @@ test('AutoClicker uses incoming swing packets even when render animations never 
  for(let i=0;i<14;i++){
   h.packet(h.SwingPacket,{entityId:()=>42});h.tick(2);
  }
- assert(h.chat.some(line=>line.text.includes('AutoClicker (vl:1.0)')));
+ assert(h.chat.some(line=>line.text.includes('Auto Clicker (vl:1.0)')));
  h.events.disable();
+});
+
+function projectileShot(h, Class, {owner=h.entity, near=true, weapon=null, age=0, moving=true}={}) {
+ const entity=Object.assign(new Class(), {
+  tickCount:age, getOwner:()=>owner, getWeaponItem:()=>weapon,
+  distanceToSqr:()=>near?4:400,
+  getDeltaMovement:()=>({lengthSqr:()=>moving?1:0}),
+ });
+ h.projectiles.push(entity);
+ return entity;
+}
+
+test('Auto Throw requires a sustained lock and a high rate of distinct owner-linked throws',()=>{
+ const h=antiCheatHost();
+ h.flight.ground=true;
+ h.entity.getMainHandItem=()=>({getItem:()=>h.Items.SNOWBALL});
+ h.antiCheat.setEnabled(true);
+ h.tick(30);
+ for(let i=0;i<22;i++){projectileShot(h,h.Throwable);h.tick(2);}
+ const flags=h.chat.filter(line=>line.text.includes('Auto Throw (vl:'));
+ assert(flags.length>0);
+ assert(h.projectileCounters.queries<=h.clock()/100);
+ const event=JSON.parse(h.store.get('opai.bridge.antiCheatFlag'));
+ assert.equal(event.check,'AutoThrow');
+ const count=h.chat.length;
+ h.tick(20);
+ assert.equal(h.chat.length,count,'retained projectiles must never be counted twice');
+ h.events.disable();
+});
+
+test('Auto Throw rejects unrelated projectiles, missing owners, slow throws and broken locks',()=>{
+ const h=antiCheatHost();
+ h.flight.ground=true;
+ h.entity.getMainHandItem=()=>({getItem:()=>h.Items.SNOWBALL});
+ h.antiCheat.setEnabled(true);
+ h.tick(30);
+ for(let i=0;i<20;i++){projectileShot(h,h.Throwable,{owner:null});projectileShot(h,h.Throwable,{owner:h.mc.player});h.tick(2);}
+ for(let i=0;i<8;i++){projectileShot(h,h.Throwable);h.tick(12);}
+ for(let i=0;i<20;i++){h.flight.yaw=i%2?0:170;projectileShot(h,h.Throwable);h.tick(2);}
+ assert(!h.chat.some(line=>line.text.includes('Auto Throw')));
+ h.events.disable();
+});
+
+test('Auto Bow counts nearby arrows and direct hits once, excluding crossbows and old arrows',()=>{
+ const h=antiCheatHost();
+ h.flight.ground=true;
+ h.entity.getMainHandItem=()=>({getItem:()=>h.Items.BOW});
+ Object.defineProperty(h.mc.player,'hurtTime',{value:5,configurable:true});
+ h.antiCheat.setEnabled(true);h.tick(28);
+ const weapon={isEmpty:()=>false,getItem:()=>h.Items.BOW};
+ const crossbow={isEmpty:()=>false,getItem:()=>h.Items.CROSSBOW};
+ for(let i=0;i<12;i++){
+  projectileShot(h,h.Arrow,{weapon:crossbow});
+  projectileShot(h,h.Arrow,{weapon,age:80});
+  projectileShot(h,h.Arrow,{weapon,moving:false});
+  projectileShot(h,h.Arrow,{weapon,near:false});
+  h.tick(2);
+ }
+ assert(!h.chat.some(line=>line.text.includes('Auto Bow')));
+ for(let i=0;i<9;i++){
+  const arrow=projectileShot(h,h.Arrow,{weapon,near:i%2===0});
+  h.setDamage({getDirectEntity:()=>arrow});
+  h.tick(2);
+ }
+ assert(h.chat.some(line=>line.text.includes('Auto Bow (vl:1.0)')));
+ const before=h.chat.length;
+ h.tick(12);assert.equal(h.chat.length,before);
+ h.events.disable();
+});
+
+test('projectile controls enforce range, thresholds and disabled checks without world scans',()=>{
+ const h=antiCheatHost(),settings=h.antiCheat.settings;
+ h.flight.ground=true;
+ h.entity.getMainHandItem=()=>({getItem:()=>h.Items.BOW});
+ h.antiCheat.setEnabled(true);h.tick(26);
+ settings.AutoBowSettingsMinDistance.set(40);
+ const weapon={isEmpty:()=>false,getItem:()=>h.Items.BOW};
+ for(let i=0;i<14;i++){projectileShot(h,h.Arrow,{weapon});h.tick(2);}
+ assert(!h.chat.some(line=>line.text.includes('Auto Bow')));
+ settings.AutoBowSettingsMinDistance.set(8);
+ settings.AutoBowSettingsMaxRate.set(8);
+ for(let i=0;i<12;i++){projectileShot(h,h.Arrow,{weapon});h.tick(2);}
+ assert(!h.chat.some(line=>line.text.includes('Auto Bow')));
+ settings.AutoThrow.set(false);settings.AutoBow.set(false);
+ const queries=h.projectileCounters.queries;
+ h.tick(20);assert.equal(h.projectileCounters.queries,queries);
+ h.events.disable();
+});
+
+test('Telly Scaffold recognizes rising placements in two short jumps',()=>{
+ const h=antiCheatHost();
+ h.flight.ground=true;h.flight.blockHeld=true;h.setTerrain('bridge');
+ h.antiCheat.setEnabled(true);h.tick(26,.1);
+ for(let n=0;n<2;n++){
+  h.flight.ground=false;
+  h.tick(3,.27,.2);
+  const x=Math.floor(h.points.x);
+  h.place(x,-1,63);h.place(x,1,63);h.tick(1,.15,-.2);
+  h.tick(2,.15,-.2);h.flight.ground=true;h.tick(2,.15);
+ }
+ assert(h.chat.some(line=>line.text.includes('Telly Scaffold (vl:')));
+ assert(h.clock()<103000,'the first flag should take two jumps, not a long run');
+ h.events.disable();
+});
+
+test('Cheater VL and per-check VL are direct values and deletion clears accumulated evidence',()=>{
+ const h=antiCheatHost(),settings=h.antiCheat.settings;
+ settings.alertVl.set(4);
+ settings.AirHoverSettingsVL.set(2);
+ h.antiCheat.setEnabled(true);
+ h.tick(65,.2);
+ assert(h.chat.some(line=>line.text.includes('is a suspected cheater (vl:4.0)')));
+ const command=h.commands.get('hack');
+ command.subcommands.find(sub=>sub.name==='delete').onExecute('OtherPlayer');
+ assert.deepEqual(JSON.parse(h.store.get('opai.bridge.antiCheatMarks'))['server:play.example.org'],[]);
+ h.flight.ground=true;h.tick(20);
+ assert(!h.draw().some(draw=>draw[0]==='rounded'&&draw[7].values[0]===255));
+ h.events.disable();
+});
+
+test('Reset VL clears total and check VL on schedule while preserving persistent player marks',()=>{
+ const h=antiCheatHost(), settings=h.antiCheat.settings, events=[];
+ settings.alertVl.set(1);
+ settings.resetVl.set(true);
+ settings.resetSeconds.set(5);
+ settings.Protocol.set(true);
+ settings.AirHover.set(false);
+ h.flight.ground=true;
+ h.context.OpaiAntiCheat.onAntiCheatFlag((_check,_entity,event)=>events.push(event));
+ h.antiCheat.setEnabled(true);h.tick(24);
+ const flag=()=>{h.packet(h.MovePacket,{hasRotation:()=>true,getXRot:()=>95,getEntity:()=>h.entity});h.tick();};
+ flag();
+ assert.equal(events.at(-1).totalVl,1);
+ h.tick(101);
+ flag();
+ assert.equal(events.at(-1).totalVl,1);
+ assert.equal(events.at(-1).vl,1);
+ assert.deepEqual(JSON.parse(h.store.get('opai.bridge.antiCheatMarks'))['server:play.example.org'],['id']);
+ assert.equal(h.chat.filter(line=>line.color===0xff5555).length,3,'resetting VL must not repeat an existing mark alert');
+ settings.resetVl.set(false);
+ h.tick(101);
+ flag();
+ assert.equal(events.at(-1).totalVl,2);
+ settings.resetSeconds.set(10);
+ settings.resetVl.set(true);
+ h.tick(101);
+ flag();
+ assert.equal(events.at(-1).totalVl,3);
+ h.tick(102);
+ flag();
+ assert.equal(events.at(-1).totalVl,1);
+ h.events.disable();
+});
+
+test('hack add, delete and list work while disabled, persist names, and offer a clickable X',()=>{
+ const h=antiCheatHost(),command=h.commands.get('hack');
+ const run=(name,arg)=>command.subcommands.find(sub=>sub.name===name).onExecute(arg);
+ run('add','OtherPlayer');run('list');
+ const line=h.chatLines.find(line=>line.component.text.includes('OtherPlayer [X]')).component;
+ assert.deepEqual(JSON.parse(h.store.get('opai.bridge.antiCheatMarks')),{'server:play.example.org':['id']});
+ assert.equal(JSON.parse(h.store.get('opai.bridge.antiCheatNames'))['server:play.example.org'].id,'OtherPlayer');
+ assert(!h.draw().some(draw=>draw[0]==='rounded'&&draw[7].values[0]===255),'listing marks while disabled must not turn rendering on');
+ line.parts.find(part=>part.click).click.run();
+ assert.deepEqual(JSON.parse(h.store.get('opai.bridge.antiCheatMarks'))['server:play.example.org'],[]);
+ run('add','localplayer');
+ assert(h.messages.at(-1).includes('cannot mark yourself'));
+ run('add','OtherPlayer');run('list');
+ const stale=h.chatLines[0].component.parts.find(part=>part.click).click;
+ h.mc.getCurrentServer=()=>({ip:'another.example.org'});
+ stale.run();
+ assert(h.messages.at(-1).includes('out of date'));
+ assert.deepEqual(JSON.parse(h.store.get('opai.bridge.antiCheatMarks'))['server:play.example.org'],['id']);
+ h.mc.getCurrentServer=()=>({ip:'play.example.org'});
+ h.setLoaded(false);run('delete','otherplayer');
+ assert.deepEqual(JSON.parse(h.store.get('opai.bridge.antiCheatMarks'))['server:play.example.org'],[]);
+ h.events.disable();line.parts.find(part=>part.click).click.run();
 });
 
 test('watch links switch and restore the camera, keep one exit at the bottom, and report an unloaded target',()=>{
  const h=antiCheatHost();h.antiCheat.setEnabled(true);
  h.tick(41,.2);
- const link=h.chatLines.find(line=>line.component.text.includes('[观看玩家]')).component.parts.find(part=>part.click).click;
+ const link=h.chatLines.find(line=>line.component.text.includes('[Watch]')).component.parts.find(part=>part.click).click;
  link.run();assert.equal(h.mc.getCameraEntity(),h.entity);
- assert.equal(h.chatLines[0].component.text,'[退出观看]');
+ assert.equal(h.chatLines[0].component.text,'[Stop watching]');
  h.tick(22,.2);
- assert.equal(h.chatLines[0].component.text,'[退出观看]');
- assert.equal(h.chatLines.filter(line=>line.component.text==='[退出观看]').length,1);
+ assert.equal(h.chatLines[0].component.text,'[Stop watching]');
+ assert.equal(h.chatLines.filter(line=>line.component.text==='[Stop watching]').length,1);
  h.chatLines[0].component.click.run();assert.equal(h.mc.getCameraEntity(),h.mc.player);
- assert(!h.chatLines.some(line=>line.component.text==='[退出观看]'));
+ assert(!h.chatLines.some(line=>line.component.text==='[Stop watching]'));
  link.run();h.setLoaded(false);h.tick();
- assert.equal(h.mc.getCameraEntity(),h.mc.player);assert.match(h.messages.at(-1),/已退出观看/);
- link.run();assert.match(h.messages.at(-1),/该玩家已离开当前加载区域/);
+ assert.equal(h.mc.getCameraEntity(),h.mc.player);assert.match(h.messages.at(-1),/Watching stopped/);
+ link.run();assert.match(h.messages.at(-1),/outside the loaded area/);
  h.events.disable();link.run();assert.equal(h.mc.getCameraEntity(),h.mc.player);
 });
 
 test('Anti-cheat settings separate check VL, debounce flags, and apply the extra VL threshold',()=>{
  const h=antiCheatHost(), settings=h.antiCheat.settings;
- assert.deepEqual(Object.keys(settings).slice(2),['AutoBlock','LegitScaffold','Scaffold','ScaffoldBPS','TellyScaffold','NoSlow','Nuker','BedNuker','AirHover','GroundSpeed','AimAssist','AutoClicker','Blink','FastMine','NoFall','Protocol']);
+ assert.deepEqual(Object.keys(settings).filter(key=>!['extraVl','flagInterval','alertVl','resetVl','resetSeconds'].includes(key)&&!key.includes('Settings')),['AutoBlock','LegitScaffold','Scaffold','ScaffoldBPS','TellyScaffold','NoSlow','Nuker','BedNuker','AirHover','GroundSpeed','AimAssist','AutoClicker','Blink','FastMine','NoFall','Protocol','AutoThrow','AutoBow']);
  assert(settings.AimAssist.get() && settings.AutoClicker.get());
  for(const name of ['Blink','FastMine','NoFall','Protocol'])assert.equal(settings[name].get(),false);
  settings.extraVl.set(3);settings.Protocol.set(true);
@@ -355,12 +585,12 @@ test('OpenB4-style NoSlow, AimAssist, Blink, AutoClicker and NoFall require repe
  h.flight.blocking=true;h.tick(7,.18);h.flight.blocking=false;h.tick(2);
  assert(!h.chat.some(line=>line.text.includes('NoSlow')));
  h.flight.blocking=true;h.tick(20,.18);h.flight.blocking=false;h.flight.sprint=false;h.tick();
- assert(h.chat.some(line=>line.text.includes('NoSlow (vl:1.0)')));
+ assert(h.chat.some(line=>line.text.includes('No Slow (vl:1.0)')));
  h.flight.yaw=176;
  for(let i=0;i<30;i++){h.flight.yaw+=2;if(h.flight.yaw>=180)h.flight.yaw-=360;h.tick();}
- assert(h.chat.some(line=>line.text.includes('AimAssist (vl:1.0)')));
+ assert(h.chat.some(line=>line.text.includes('Aim Assist (vl:1.0)')));
  for(let i=0;i<12;i++){h.flight.swinging=true;h.tick();h.flight.swinging=false;h.tick(2);}
- assert(h.chat.some(line=>line.text.includes('AutoClicker (vl:1.0)')));
+ assert(h.chat.some(line=>line.text.includes('Auto Clicker (vl:1.0)')));
  h.flight.sprint=true;
  for(let n=0;n<2;n++){
   h.tick(4,.2);h.tick(8);
@@ -369,7 +599,7 @@ test('OpenB4-style NoSlow, AimAssist, Blink, AutoClicker and NoFall require repe
  assert(h.chat.some(line=>line.text.includes('Blink (vl:1.0)')));
  h.flight.sprint=false;h.flight.ground=false;h.tick(13,0,-.5);
  h.flight.ground=true;h.tick(5);assert(!h.chat.some(line=>line.text.includes('NoFall')));
- h.tick(10);assert(h.chat.some(line=>line.text.includes('NoFall (vl:1.0)')));
+ h.tick(10);assert(h.chat.some(line=>line.text.includes('No Fall (vl:1.0)')));
  h.events.disable();
 });
 
@@ -398,7 +628,7 @@ test('mining checks correlate server removals with the matching player animation
   const pos=h.point(2*i,63,0);animation(pos,0);h.tick();animation(pos,7);h.tick();remove(pos,i%2===0);
  }
  assert(h.chat.some(line=>line.text.includes('Nuker (vl:1.0)')));
- assert(h.chat.some(line=>line.text.includes('FastMine (vl:1.0)')));
+ assert(h.chat.some(line=>line.text.includes('Fast Mine (vl:1.0)')));
  const bed=new h.types.BedBlock();h.types.BedBlock.PART='part';
  for(const [x,part] of [[20,'foot'],[21,'head']])h.blocks.set(`${x},63,0`,{isAir:()=>false,isSolidRender:()=>false,getBlock:()=>bed,getDestroySpeed:()=>.2,getValue:property=>property==='part'?part:h.directions[0]});
  const pos=h.point(20,63,0);animation(pos,0);h.tick();animation(pos,6);h.tick();remove(pos,true);

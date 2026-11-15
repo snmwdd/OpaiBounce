@@ -1,4 +1,5 @@
 import {expect, test, type Page} from '@playwright/test';
+import {readFileSync} from 'node:fs';
 import {setup} from './fixtures';
 
 async function openOpai(page: Page) {
@@ -51,13 +52,13 @@ test('Opai settings persist and Old island shows the current username and indepe
     const api = await setup(page, false, shared);
     await page.goto('/#/clickgui?static&preview');
     await openOpai(page);
-    await page.getByRole('checkbox', {name: 'Enable Shadows'}).uncheck();
+    await page.getByRole('checkbox', {name: 'Shadows'}).uncheck();
     await expect(page.locator('html')).toHaveAttribute('data-opai-shadows', 'off');
-    await page.getByRole('checkbox', {name: 'Enable Blur'}).uncheck();
+    await page.getByRole('checkbox', {name: 'Blur'}).uncheck();
     await expect(page.locator('html')).toHaveAttribute('data-opai-blur', 'off');
     const writes = api.requests.filter(request => request.name === 'HUD' && request.method === 'PUT');
     expect(writes.at(-1)?.body.value[0].value[0].value).toBe(false);
-    await page.getByRole('button', {name: 'Dynamic Island Style', exact: true}).click();
+    await page.getByRole('button', {name: 'Dynamic Island', exact: true}).click();
     await page.getByRole('button', {name: 'Old', exact: true}).click();
     await expect.poll(() => JSON.parse(shared['opai.preferences']).islandStyle).toBe('old');
 
@@ -78,6 +79,33 @@ test('Opai settings persist and Old island shows the current username and indepe
     shared['opai.bridge.snapshot'] = JSON.stringify({...snapshot, at: Date.now(), ping: 32.7, pingSource: 'icmp'});
     await expect(page.locator('.island .ping')).toHaveText('33ms');
     await expect(page.locator('.island .ping')).toHaveCSS('font-variant-numeric','proportional-nums');
+    const island = page.locator('.hud .island');
+    const logo = island.locator('.idle-content .brand .opai-icon');
+    await expect(logo).toHaveCSS('width', '18px');
+    await expect(island).toHaveAttribute('data-motion-active', 'false');
+    const insets = await island.evaluate(shell => {
+        const bounds = shell.getBoundingClientRect();
+        const logo = shell.querySelector('.brand .opai-icon')!.getBoundingClientRect();
+        const content = shell.querySelector('.idle-content')!.getBoundingClientRect();
+        const scale = bounds.width / parseFloat(getComputedStyle(shell).width);
+        return {
+            left: (logo.left - bounds.left) / scale,
+            top: (logo.top - bounds.top) / scale,
+            bottom: (bounds.bottom - logo.bottom) / scale,
+            right: (bounds.right - content.right) / scale,
+        };
+    });
+    expect(insets.top).toBeCloseTo(2.5, 1);
+    expect(insets.left).toBeCloseTo(insets.top, 1);
+    expect(insets.bottom).toBeCloseTo(insets.top, 1);
+    expect(insets.right).toBeCloseTo(7.5, 0);
+    await page.goto('/#/clickgui?static&preview');
+    await openOpai(page);
+    await page.getByRole('button', {name: 'Dynamic Island', exact: true}).click();
+    await page.getByRole('button', {name: 'New', exact: true}).click();
+    await expect.poll(() => JSON.parse(shared['opai.preferences']).islandStyle).toBe('new');
+    await page.goto('/#/hud?static&preview');
+    await expect(page.locator('.idle-content .brand .opai-icon')).toHaveCSS('width', '12px');
 });
 
 test('old HUD background preferences are ignored and removed on the next Opai settings save', async ({page}) => {
@@ -90,9 +118,93 @@ test('old HUD background preferences are ignored and removed on the next Opai se
     await page.goto('/#/clickgui?static&preview');
     await openOpai(page);
     await expect(page.getByRole('checkbox', {name:'是否开启hud透明'})).toHaveCount(0);
-    await page.getByRole('checkbox', {name:'Enable Shadows'}).uncheck();
+    await page.getByRole('checkbox', {name:'Shadows'}).uncheck();
     await expect.poll(() => JSON.parse(shared['opai.preferences'])).toMatchObject({shadows:false,islandStyle:'old'});
     expect(JSON.parse(shared['opai.preferences'])).not.toHaveProperty('transparentHud');
+});
+
+test('Target HUD style and dark gray backgrounds persist and apply to HUD panels', async ({page}) => {
+    const shared: Record<string, string> = {};
+    const api = await setup(page, false, shared);
+    await page.goto('/#/clickgui?static&preview');
+    await openOpai(page);
+    await page.getByRole('button', {name: 'Target HUD', exact: true}).click();
+    await page.getByRole('button', {name: 'Old', exact: true}).click();
+    await expect.poll(() => JSON.parse(shared['opai.preferences'] ?? '{}').targetHudStyle).toBe('old');
+    await page.getByRole('button', {name: 'HUD Background', exact: true}).click();
+    await page.getByRole('button', {name: 'Dark Gray', exact: true}).click();
+    await expect.poll(() => JSON.parse(shared['opai.preferences'] ?? '{}').hudBackground).toBe('solid');
+
+    await page.goto('/#/hud?static&preview');
+    await page.reload();
+    await expect(page.locator('.hud .island')).toHaveCSS('background-color', 'rgb(36, 36, 36)');
+    await expect(page.locator('.hud .session')).toHaveCSS('background-color', 'rgb(36, 36, 36)');
+    api.emit('targetChange', {target:{username:'Target', uuid:'target', actualHealth:20, maxHealth:20}});
+    const target = page.locator('.targethud');
+    await expect(target.getByLabel('Target status')).toBeVisible();
+    await expect(target).toHaveCSS('width', '130px');
+    await expect(target).toHaveCSS('border-radius', '4px');
+    shared['opai.bridge.snapshot'] = JSON.stringify({
+        protocol:1, connected:true, inWorld:true, at:Date.now(), capabilities:{preview:true},
+        combatTarget:{uuid:'target', health:20, grounded:true, visible:false, age:418, hurtTime:0, lastHitAt:0},
+    });
+    await expect(target.getByLabel('Target status')).toContainText('G: true | CV: false');
+    await expect(target.getByLabel('Target status')).toContainText('TE: 418 | HURT: 0');
+    await expect(target).toHaveCSS('background-color', 'rgb(36, 36, 36)');
+    await expect(target).toHaveCSS('backdrop-filter', 'none');
+    await expect(target.getByLabel('Target armor')).toHaveCount(0);
+    expect(api.errors).toEqual([]);
+});
+
+test('the new Target HUD shows armor and only a matching hit flashes the portrait', async ({page}) => {
+    const shared: Record<string, string> = {};
+    const snapshot = (combatTarget: object | null) => {
+        shared['opai.bridge.snapshot'] = JSON.stringify({
+            protocol:1, connected:true, inWorld:true, at:Date.now(), capabilities:{preview:true}, combatTarget,
+        });
+    };
+    snapshot(null);
+    const api = await setup(page, false, shared);
+    await page.route('**/api/v1/client/resource/itemTexture?*', route =>
+        route.fulfill({contentType:'image/png', body:readFileSync('tests/fixtures/items/diamond_helmet.png')}));
+    await page.addInitScript(() => {
+        const animate = Element.prototype.animate;
+        const hits: number[] = [];
+        Object.assign(window, {targetHudHits:hits});
+        Element.prototype.animate = function (...args) {
+            if (this.classList.contains('hit-tint')) hits.push(Date.now());
+            return animate.apply(this, args);
+        };
+    });
+    await page.goto('/#/hud?static&preview');
+    await expect(page.locator('.island')).toBeVisible();
+    const item = (id: string, count = 1) => ({identifier:'minecraft:' + id, count});
+    const target = {
+        username:'Target', uuid:'target', actualHealth:20, maxHealth:20,
+        armorItems:[item('diamond_boots'), item('air', 0), item('diamond_chestplate'), item('diamond_helmet')],
+    };
+    const hud = page.locator('.targethud');
+    api.emit('targetChange', {target});
+    await expect(hud).toHaveCSS('width', '122px');
+    await expect(hud).toHaveCSS('border-radius', '6px');
+    const armor = hud.getByLabel('Target armor').locator('img');
+    await expect(armor).toHaveCount(3);
+    await expect(armor.first()).toHaveAttribute('alt', 'diamond helmet');
+    await expect(armor.last()).toHaveAttribute('alt', 'diamond boots');
+    expect(await armor.first().evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+
+    const sample = {uuid:'other',health:12,grounded:true,visible:true,age:418,hurtTime:10,lastHitAt:Date.now()};
+    snapshot(sample);
+    await expect.poll(() => page.evaluate(() => (window as any).OpaiTheme.getState()?.combatTarget?.uuid)).toBe('other');
+    const hits = () => page.evaluate(() => (window as any).targetHudHits.length);
+    expect(await hits()).toBe(0);
+    api.emit('targetChange', {target});
+    snapshot({...sample, uuid:'target', lastHitAt:Date.now()});
+    await expect.poll(hits).toBe(1);
+    await expect(hud.locator('.name')).toHaveText('Target 12');
+    await expect(hud.locator('.hit-tint')).toHaveCSS('opacity', '0', {timeout:900});
+    expect(await hits()).toBe(1);
+    expect(api.errors).toEqual([]);
 });
 
 test('profiles preserve the current key until restoring saved key binds is enabled', async ({page}) => {
@@ -120,8 +232,8 @@ test('profiles preserve the current key until restoring saved key binds is enabl
 
     await page.getByRole('button', {name: 'Configuration settings', exact: true}).click();
     await page.getByRole('button', {name: 'Opai', exact: true}).click();
-    await page.getByRole('checkbox', {name: 'Load Key Binds with Configurations'}).check();
-    await expect(page.getByRole('checkbox', {name: 'Load Key Binds with Configurations'})).toBeEnabled();
+    await page.getByRole('checkbox', {name: 'Restore Keybinds'}).check();
+    await expect(page.getByRole('checkbox', {name: 'Restore Keybinds'})).toBeEnabled();
     await page.getByRole('button', {name: 'Back to configurations', exact: true}).click();
     await page.getByRole('button', {name: 'Back to configurations', exact: true}).click();
     await page.getByRole('button', {name: 'Load', exact: true}).click();
@@ -259,7 +371,7 @@ test('the ClickGUI search capsule expands upward, locates a module and can be hi
 
     await openOpai(page);
     await page.getByLabel('Opai settings').screenshot({path: 'reports/opai-native-settings.png'});
-    await page.getByRole('checkbox', {name: 'Show Click GUI Search'}).uncheck();
+    await page.getByRole('checkbox', {name: 'ClickGUI Search'}).uncheck();
     await expect(trigger).toHaveCount(0);
     await expect.poll(() => JSON.parse(shared['opai.preferences']).search).toBe(false);
     await page.reload();

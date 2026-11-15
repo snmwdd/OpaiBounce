@@ -9,6 +9,8 @@ const defaults = {
     shadows: true,
     blur: true,
     islandStyle: 'new' as 'new' | 'old',
+    targetHudStyle: 'new' as 'new' | 'old',
+    hudBackground: 'translucent' as 'translucent' | 'solid',
     loadKeybinds: false,
     icmpPing: true,
     search: true,
@@ -33,6 +35,8 @@ function parsePreferences(raw: string | null): OpaiPreferences {
         shadows: typeof stored?.shadows === 'boolean' ? stored.shadows : defaults.shadows,
         blur: typeof stored?.blur === 'boolean' ? stored.blur : defaults.blur,
         islandStyle: stored?.islandStyle === 'old' ? 'old' : 'new',
+        targetHudStyle: stored?.targetHudStyle === 'old' ? 'old' : 'new',
+        hudBackground: stored?.hudBackground === 'solid' ? 'solid' : 'translucent',
         loadKeybinds: stored?.loadKeybinds === true,
         icmpPing: stored?.icmpPing !== false,
         search: stored?.search !== false,
@@ -114,6 +118,7 @@ export function installOpaiPreferences() {
     const apply = opaiPreferences.subscribe(preferences => {
         root.dataset.opaiShadows = preferences.shadows ? 'on' : 'off';
         root.dataset.opaiBlur = preferences.blur ? 'on' : 'off';
+        root.dataset.opaiHudBackground = preferences.hudBackground;
     });
     const sync = () => void refreshOpaiPreferences(true).catch(() => {});
     const storageChanged = (event: StorageEvent) => {

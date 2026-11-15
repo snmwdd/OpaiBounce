@@ -7,21 +7,27 @@
     export let disabled: boolean;
     export let change: <K extends keyof OpaiPreferences>(key: K, value: OpaiPreferences[K]) => Promise<void>;
 
-    type BooleanKey = Exclude<keyof OpaiPreferences, 'islandStyle'>;
-    const fields: {key: keyof OpaiPreferences; name: string}[] = [
-        {key: 'shadows', name: 'Enable Shadows'},
-        {key: 'blur', name: 'Enable Blur'},
-        {key: 'islandStyle', name: 'Dynamic Island Style'},
-        {key: 'loadKeybinds', name: 'Load Key Binds with Configurations'},
-        {key: 'icmpPing', name: 'Use Independent Ping'},
-        {key: 'search', name: 'Show ClickGUI Search'},
+    type BooleanKey = 'shadows' | 'blur' | 'loadKeybinds' | 'icmpPing' | 'search';
+    type Field = {key: BooleanKey | 'islandStyle' | 'targetHudStyle' | 'hudBackground'; name: string};
+    const fields: Field[] = [
+        {key: 'shadows', name: 'Shadows'},
+        {key: 'blur', name: 'Blur'},
+        {key: 'islandStyle', name: 'Dynamic Island'},
+        {key: 'targetHudStyle', name: 'Target HUD'},
+        {key: 'hudBackground', name: 'HUD Background'},
+        {key: 'loadKeybinds', name: 'Restore Keybinds'},
+        {key: 'icmpPing', name: 'ICMP Ping'},
+        {key: 'search', name: 'ClickGUI Search'},
     ];
 
     function controls(preferences: OpaiPreferences): ModuleSetting[] {
         return fields.map(({key, name}) => {
             const common = {name, description: undefined, key: undefined};
-            if (key === 'islandStyle') {
-                return {...common, valueType: 'CHOOSE', choices: ['New', 'Old'], value: preferences.islandStyle === 'old' ? 'Old' : 'New'};
+            if (key === 'islandStyle' || key === 'targetHudStyle') {
+                return {...common, valueType: 'CHOOSE', choices: ['New', 'Old'], value: preferences[key] === 'old' ? 'Old' : 'New'};
+            }
+            if (key === 'hudBackground') {
+                return {...common, valueType: 'CHOOSE', choices: ['Translucent', 'Dark Gray'], value: preferences[key] === 'solid' ? 'Dark Gray' : 'Translucent'};
             }
             return {...common, valueType: 'BOOLEAN', value: preferences[key]};
         });
@@ -33,10 +39,12 @@
     async function commit(index: number) {
         const {key} = fields[index];
         const value = settings[index].value;
-        if (key === 'islandStyle') {
+        if (key === 'islandStyle' || key === 'targetHudStyle') {
             await change(key, value === 'Old' ? 'old' : 'new');
+        } else if (key === 'hudBackground') {
+            await change(key, value === 'Dark Gray' ? 'solid' : 'translucent');
         } else {
-            await change(key as BooleanKey, value === true);
+            await change(key, value === true);
         }
         settings = controls(get(opaiPreferences));
     }
@@ -44,7 +52,7 @@
 
 <fieldset class="opai-preferences" aria-label="Opai settings" {disabled}>
     {#each fields as field, index (field.key)}
-        <OpaiSetting path="opai.preferences" bind:setting={settings[index]} on:change={() => commit(index)}/>
+        <OpaiSetting path="opai.preferences" displayName={field.name} bind:setting={settings[index]} on:change={() => commit(index)}/>
     {/each}
 </fieldset>
 

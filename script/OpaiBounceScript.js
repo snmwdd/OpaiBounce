@@ -1,10 +1,10 @@
-// Opai theme bridge, protocol 1. Registers native TritiumMusic and Anti-cheat modules.
+// Opai theme bridge, protocol 1. Registers TritiumMusic, Anti-cheat and the .hack command.
 // Host contract: supplied LiquidBounce Nextgen 0.41.1 / Minecraft 26.3 + official Script API add-on.
 // Render arguments are float32 exact for GraalJS. Rounded rectangles support both host signatures.
 // Screen heartbeats keep telemetry and preview alive while the singleplayer world is paused.
 (function () {
     'use strict';
-    const VERSION = '1.9.1', PREFIX = 'opai.bridge.';
+    const VERSION = '1.10.0', PREFIX = 'opai.bridge.';
     function decode(value) { try { return value == null ? null : JSON.parse(String(value)); } catch (_) { return null; } }
     function previewRequest(value, now, width, height) {
         const data = decode(value), r = data && data.rect;
@@ -15,11 +15,42 @@
         return right-x>=20 && bottom-y>=40 ? {...data,rect:{x,y,width:right-x,height:bottom-y},options:data.options||{}} : null;
     }
     function healthColor(health) { return health>=14?0x80d900:health>=8?0xffc83d:0xff615b; }
-    const VL_BASELINE = 10, VL_DECAY_MS = 30_000, SCAFFOLD_WINDOW = 2000;
+    const VL_BASELINE = 10, SCAFFOLD_WINDOW = 2000;
     const CHECK_DEFAULTS = {
         AutoBlock:true, LegitScaffold:true, Scaffold:true, ScaffoldBPS:true, TellyScaffold:true, NoSlow:true, Nuker:true, BedNuker:true,
         AirHover:true, GroundSpeed:true, AimAssist:true, AutoClicker:true, Blink:false, FastMine:false, NoFall:false, Protocol:false,
+        AutoThrow:true, AutoBow:true,
     };
+    const CHECK_LABELS = {
+        AutoBlock:'Auto Block', 'Legit Scaffold':'Eagle', AimAssist:'Aim Assist', AutoClicker:'Auto Clicker',
+        NoSlow:'No Slow', FastMine:'Fast Mine', NoFall:'No Fall',
+        AutoThrow:'Auto Throw', AutoBow:'Auto Bow',
+    };
+    // [default, minimum, maximum]. Flat native keys preserve earlier saved switches.
+    const CHECK_RULES = {
+        AutoBlock:{MinSwings:[7,3,30],WindowSeconds:[9,2,20],BlockTimeSeconds:[.5,.1,2],BlockRatio:[.85,.5,1]},
+        LegitScaffold:{MinCycles:[5,3,12],WindowSeconds:[7,2,15],TimingMs:[85,20,250]},
+        Scaffold:{MinBlocks:[4,3,20],WindowSeconds:[2,1,8],MinPitch:[65,40,85]},
+        ScaffoldBPS:{MaxBPS:[3.5,1,20],WindowSeconds:[2,1,5]},
+        TellyScaffold:{MinJumps:[2,2,8],MinBlocks:[3,3,20],WindowSeconds:[4.5,2,10],MinTravel:[.55,.3,2],JumpTimeSeconds:[1.1,.5,2]},
+        NoSlow:{MinSpeed:[1.9,1,10],HoldSeconds:[.45,.2,3]},
+        Nuker:{MinBreaks:[2,2,12],WindowSeconds:[4,1,10]},
+        BedNuker:{MinBreaks:[1,1,5],WindowSeconds:[4,1,10]},
+        AirHover:{HoldSeconds:[.8,.4,4],MaxVerticalStep:[.025,.005,.1]},
+        GroundSpeed:{HoldSeconds:[.8,.4,4],MinSpeed:[10,7,25]},
+        AimAssist:{SmoothTicks:[18,8,60],MinSnaps:[3,2,12],WindowSeconds:[4.5,2,10],AimAngle:[5,1,15]},
+        AutoClicker:{MinSwings:[9,6,40],WindowSeconds:[1.5,.8,4],MaxCPS:[13.33,8,25],TimingMs:[20,5,40]},
+        Blink:{MinBursts:[2,2,8],WindowSeconds:[10,3,20],MinStep:[.7,.4,2]},
+        FastMine:{MinBreaks:[3,2,12],WindowSeconds:[5,2,12],MaxBreakMs:[150,75,350]},
+        NoFall:{MinDrop:[5,4,12],WaitSeconds:[.5,.3,2]},
+        Protocol:{MaxPitch:[90,90,100]},
+        AutoThrow:{WindowSeconds:[2.5,1,8],MinThrows:[6,3,30],MaxRate:[3,1,15],LockSeconds:[.6,.2,2],
+            AimAngle:[12,3,30],LockRatio:[.8,.5,1],Range:[40,8,96]},
+        AutoBow:{WindowSeconds:[4,2,10],MinArrows:[5,3,30],MaxRate:[1.5,.5,8],MinDistance:[8,3,48],Range:[48,12,96],TargetRadius:[6,2,12]},
+    };
+    const checkOptions = Object.fromEntries(Object.entries(CHECK_RULES).map(([name, fields]) => [name,
+        Object.fromEntries([...Object.entries(fields).map(([key, rule]) => [key, rule[0]]), ['FlagIntervalSeconds',.75], ['VL',1]])]));
+    function option(check, key) { return checkOptions[checkKey(check)][key]; }
 
     function checkKey(name) { return name.replace(/ /g, ''); }
     function flagDetail(value, unit='') { return Number(value).toFixed(2) + unit; }
@@ -29,21 +60,22 @@
         const dx = current.x - previous.x, dy = current.y - previous.y, dz = current.z - previous.z;
         const horizontal = Math.hypot(dx, dz);
         if (elapsed > 350 || horizontal > 6 || Math.abs(dy) > 3) return null;
-        if (previous.air && current.air && Math.abs(dy) <= .025 && horizontal >= .15) return 'Air Hover';
+        if (previous.air && current.air && Math.abs(dy) <= option('AirHover','MaxVerticalStep') && horizontal >= .15) return 'Air Hover';
         if (previous.ground && current.ground && Math.abs(dy) <= .08
-            && horizontal * 1000 / elapsed > Math.max(10, current.speed * 80)) return 'Ground Speed';
+            && horizontal * 1000 / elapsed > Math.max(option('GroundSpeed','MinSpeed'), current.speed * 80)) return 'Ground Speed';
         return null;
     }
 
-    function decayVl(state, timestamp) {
-        for (const [name, entry] of state.checks) {
-            const elapsed = Math.floor((timestamp - entry.decayAt) / VL_DECAY_MS);
-            if (elapsed <= 0) continue;
-            const amount = Math.min(entry.vl, elapsed);
-            entry.vl -= amount;
-            state.vl -= amount;
-            entry.decayAt += elapsed * VL_DECAY_MS;
-            if (!entry.vl) state.checks.delete(name);
+    function resetVlIfDue(state, timestamp) {
+        if (!vlResetEnabled || state.resetVlAt == null || timestamp < state.resetVlAt) return;
+        state.vl = 0;
+        state.checks.clear();
+        state.resetVlAt = null;
+    }
+
+    function rescheduleVlReset() {
+        for (const state of antiCheatPlayers.values()) {
+            state.resetVlAt = vlResetEnabled && state.vl > 0 ? now() + vlResetIntervalMs : null;
         }
     }
 
@@ -68,6 +100,13 @@
         state.occludedBreaks = [];
         state.fastBreaks = [];
     }
+
+    function clearProjectileEvidence(state) {
+        state.projectileLock = null;
+        state.throwEvents = [];
+        state.arrowEvents = [];
+        state.bowHeldAt = null;
+    }
     // Keep the validation functions usable by the standalone Node regression harness.
     if (typeof registerScript !== 'function') { if(typeof module!=='undefined')module.exports={decode,previewRequest,healthColor}; return; }
     const script=registerScript({name:'OpaiBridge',version:VERSION,authors:['Opai theme contributors']});
@@ -84,6 +123,7 @@
     const OverlayEvent=type('net.ccbluex.liquidbounce.event.events.OverlayRenderEvent');
     const ScreenEvent=type('net.ccbluex.liquidbounce.event.events.ScreenRenderEvent');
     const TickEvent=type('net.ccbluex.liquidbounce.event.events.GameTickEvent');
+    const AttackEvent=type('net.ccbluex.liquidbounce.event.events.AttackEntityEvent');
     const ModuleToggleEvent=type('net.ccbluex.liquidbounce.event.events.ModuleToggleEvent');
     const ShutdownEvent=type('net.ccbluex.liquidbounce.event.events.ClientShutdownEvent');
     const Tags=type('net.ccbluex.liquidbounce.features.module.modules.render.nametags.ModuleNametags');
@@ -113,9 +153,14 @@
     let antiCheatModule=null, antiCheatValues=null, antiCheatTypes=null, antiCheatWorld=null, antiCheatPacketHook=null;
     const checkSettings={...CHECK_DEFAULTS};
     let totalAlertThreshold=VL_BASELINE + 1, flagIntervalMs=750;
+    let vlResetEnabled = false, vlResetIntervalMs = 30_000;
     const antiCheatPlayers=new Map();
     const suspectStorageKey=PREFIX+'antiCheatMarks';
+    const suspectNamesKey=PREFIX+'antiCheatNames';
     let suspectScope=null, suspectSource=null, suspectMarks=new Set(), suspectTab=null;
+    let suspectNames = {};
+    let projectileTypes = null, projectileWorld = null, projectilePollAt = 0;
+    const seenProjectiles = new Map();
     const markedTabEntries=new Map();
     const flagListeners=new Set(), miningAnimations=new Map(), breakEvidence=new Map(), ambiguousBreaks=new Map();
     const flagHistory=[];
@@ -132,13 +177,29 @@
         antiCheatValues = {
             extraVl:Setting.int({name:'VLAbove10ToAlert', default:1, range:[1,990]}),
             flagInterval:Setting.float({name:'FlagIntervalSeconds', default:.75, range:[0,30]}),
+            alertVl:Setting.int({name:'AlertVL', default:11, range:[1,1000]}),
+            resetVl:Setting.boolean({name:'VLReset', default:false}),
+            resetSeconds:Setting.int({name:'VLResetSettingsIntervalSeconds', default:30, range:[5,600]}),
         };
+        antiCheatValues.resetVl.onChanged(value => { vlResetEnabled = value === true; rescheduleVlReset(); });
+        antiCheatValues.resetSeconds.onChanged(value => { vlResetIntervalMs = Number(value) * 1000; rescheduleVlReset(); });
+        antiCheatValues.extraVl.notAnOption();
+        antiCheatValues.extraVl.onChanged(value => antiCheatValues.alertVl.set(VL_BASELINE + Number(value)));
         for (const [name, enabled] of Object.entries(CHECK_DEFAULTS)) {
             // Old configurations explicitly saved these two experimental checks as false.
             const label = name === 'AimAssist' || name === 'AutoClicker' ? name + 'Detection' : name;
             antiCheatValues[name] = Setting.boolean({name:label, default:enabled});
         }
-        script.registerModule({name:'Anti-cheat',category:'Misc',description:'Local player checks. Red alert and skull at 10 + VL Above 10 To Alert. The flag interval applies per player and check.',settings:antiCheatValues}, module => {
+        for (const [check, fields] of Object.entries(CHECK_RULES)) {
+            const rules = {...fields, FlagIntervalSeconds:[.75,0,30], VL:[1,1,10]};
+            for (const [key, [value, min, max]] of Object.entries(rules)) {
+                const integer = /^(MinSwings|MinCycles|MinBlocks|MinJumps|MinBreaks|MinSnaps|MinBursts|MinThrows|MinArrows|SmoothTicks|TimingMs|MaxBreakMs|VL)$/.test(key);
+                const setting = Setting[integer ? 'int' : 'float']({name:check+'Settings'+key, default:value, range:[min,max]});
+                antiCheatValues[check+'Settings'+key] = setting;
+                setting.onChanged(value => checkOptions[check][key] = Number(value));
+            }
+        }
+        script.registerModule({name:'Anti-cheat',category:'Misc',description:'Checks nearby players. Alerts and marks players at the selected violation level.',settings:antiCheatValues}, module => {
             antiCheatModule = module;
             module.on('enable', resetAntiCheat);
             module.on('disable', () => { stopAntiCheatPacketHook(); resetAntiCheat(); });
@@ -148,8 +209,10 @@
     function enabledCheck(name) { return checkSettings[checkKey(name)] === true; }
 
     function readAntiCheatSettings() {
-        for (const name of Object.keys(CHECK_DEFAULTS)) checkSettings[name] = antiCheatValues[name].get() === true;
-        totalAlertThreshold = VL_BASELINE + Number(antiCheatValues.extraVl.get());
+        for (const name of Object.keys(CHECK_DEFAULTS)) {
+            checkSettings[name] = antiCheatValues[name].get() === true;
+        }
+        totalAlertThreshold = Number(antiCheatValues.alertVl.get());
         flagIntervalMs = Number(antiCheatValues.flagInterval.get()) * 1000;
     }
 
@@ -171,6 +234,10 @@
         suspectScope = null;
         suspectSource = null;
         suspectMarks = new Set();
+        suspectNames = {};
+        seenProjectiles.clear();
+        projectileWorld = null;
+        projectilePollAt = 0;
         remoteBlockUpdates.clear();
         miningAnimations.clear();
         breakEvidence.clear();
@@ -210,16 +277,28 @@
         suspectSource = source;
         const saved = decode(source)?.[scope];
         suspectMarks = new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string') : []);
+        const names = decode(storage().get(suspectNamesKey))?.[scope];
+        suspectNames = names && typeof names === 'object' ? Object.fromEntries(
+            Object.entries(names).filter(([,name]) => typeof name === 'string' && name.length > 0 && name.length <= 80),
+        ) : {};
     }
 
-    function rememberSuspect(uuid) {
-        suspectMarks.add(uuid);
+    function saveSuspectMarks() {
         if (!suspectScope) return;
         const store = storage();
         const saved = decode(store.get(suspectStorageKey)) ?? {};
         saved[suspectScope] = [...suspectMarks];
         suspectSource = JSON.stringify(saved);
         store.put(suspectStorageKey, suspectSource);
+        const names = decode(store.get(suspectNamesKey)) ?? {};
+        names[suspectScope] = suspectNames;
+        store.put(suspectNamesKey, JSON.stringify(names));
+    }
+
+    function rememberSuspect(uuid, name) {
+        suspectMarks.add(uuid);
+        if (name) suspectNames[uuid] = name;
+        saveSuspectMarks();
     }
 
     function restoreTabEntry(info, entry) {
@@ -309,6 +388,131 @@
         return null;
     }
 
+    function ensureChatActions() {
+        antiCheatTypes ??= loadAntiCheatTypes();
+        if (watchActions || !musicLoader) return;
+        const actions = musicLoader.loadClass('opai.bridge.WatchActions');
+        antiCheatTypes.click = type('net.ccbluex.liquidbounce.utils.text.RunnableClickEvent');
+        antiCheatTypes.chatHud = type('net.ccbluex.liquidbounce.utils.client.ChatHudExtensionKt');
+        const messages = type('net.minecraft.client.gui.components.ChatComponent').class.getDeclaredField('allMessages');
+        messages.setAccessible(true);
+        antiCheatTypes.chatMessages = messages;
+        watchActions = actions.getConstructor(Consumer.class).newInstance(new Consumer(handleChatAction));
+    }
+
+    function hackMessage(text) { Client.displayChatMessage('§b[Anti-Cheat] §f' + text); }
+
+    function hackReady() {
+        const connection = client.getConnection();
+        if (!active || !client.player || !client.level || !connection) {
+            hackMessage('Join a world first.');
+            return false;
+        }
+        refreshSuspectMarks(connection);
+        return !!suspectScope;
+    }
+
+    function playerIdentities(includeMarked = true) {
+        const identities = new Map(includeMarked ? Object.entries(suspectNames) : []);
+        const connection = client.getConnection();
+        const entries = connection.getListedOnlinePlayers().iterator();
+        while (entries.hasNext()) {
+            const profile = entries.next().getProfile();
+            identities.set(String(profile.id()),String(profile.name()));
+        }
+        const players = client.level.players().iterator();
+        while (players.hasNext()) {
+            const entity = players.next();
+            identities.set(String(entity.getUUID()),String(entity.getName().getString()));
+        }
+        return identities;
+    }
+
+    function removeHackMark(uuid) {
+        if (!suspectMarks.delete(uuid)) { hackMessage('That player is not marked.'); return; }
+        const name = suspectNames[uuid] ?? uuid;
+        delete suspectNames[uuid];
+        saveSuspectMarks();
+        const state = antiCheatPlayers.get(uuid);
+        if (state) {
+            state.vl = 0;
+            state.checks.clear();
+            state.resetVlAt = null;
+            state.combat = null;
+            clearEvidence(state);
+            clearProjectileEvidence(state);
+            state.graceUntil = now() + 1000;
+        }
+        for (const record of records) if (String(record.entity.getUUID()) === uuid) {
+            record.suspect = false;
+            record.pills = null;
+        }
+        clearTabMarks();
+        if (antiCheatModule?.getEnabled()) syncTabMarks(client.getConnection(),client.player);
+        hackMessage('Removed ' + name + '.');
+    }
+
+    function editHackMark(action, value) {
+        if (!hackReady()) return;
+        const input = String(value ?? '').trim();
+        const identities = playerIdentities(action === 'delete');
+        const candidates = action === 'delete' ? [...suspectMarks] : [...identities.keys()];
+        const uuid = candidates.find(id =>
+            id.toLowerCase() === input.toLowerCase() || identities.get(id)?.toLowerCase() === input.toLowerCase());
+        if (!uuid) { hackMessage('Player not found. Use an online name or a marked UUID.'); return; }
+        if (action === 'delete') { removeHackMark(uuid); return; }
+        if (uuid === String(client.player.getUUID())) { hackMessage('You cannot mark yourself.'); return; }
+        rememberSuspect(uuid,identities.get(uuid));
+        if (antiCheatModule?.getEnabled()) syncTabMarks(client.getConnection(),client.player);
+        hackMessage('Marked ' + (identities.get(uuid) ?? uuid) + '.');
+    }
+
+    function listHackMarks(value = 1) {
+        if (!hackReady()) return;
+        ensureChatActions();
+        const identities = playerIdentities();
+        const sorted = [...suspectMarks].sort((a,b) => (identities.get(a) ?? a).localeCompare(identities.get(b) ?? b));
+        const pages = Math.max(1,Math.ceil(sorted.length / 8));
+        const page = Math.max(1,Math.min(pages,Math.floor(Number(value)) || 1));
+        hackMessage(`Marked players: ${sorted.length} (page ${page}/${pages})`);
+        for (const uuid of sorted.slice((page - 1) * 8,page * 8)) {
+            const line = Component.literal('[Anti-Cheat] ' + (identities.get(uuid) ?? uuid)).withColor(0x55ffff);
+            if (watchActions) line.append(watchLink(' [X]',`delete:${watchWorldSequence}:${encodeURIComponent(suspectScope)}:${uuid}`));
+            else line.append(Component.literal(' — .hack delete ' + uuid));
+            antiCheatTypes.chat.chat(line,antiCheatTypes.metadata);
+        }
+        if (page < pages) {
+            const line = watchLink('[Next page]',`page:${watchWorldSequence}:${encodeURIComponent(suspectScope)}:${page + 1}`);
+            antiCheatTypes.chat.chat(line,antiCheatTypes.metadata);
+        }
+    }
+
+    function handleChatAction(value) {
+        const action = String(value);
+        const match = /^(delete|page):(\d+):([^:]+):(.+)$/.exec(action);
+        if (!match) { selectWatchTarget(action); return; }
+        if (!hackReady()) return;
+        if (Number(match[2]) !== watchWorldSequence || match[3] !== encodeURIComponent(suspectScope)) {
+            hackMessage('This list is out of date. Run .hack list again.');
+            return;
+        }
+        if (match[1] === 'delete') removeHackMark(match[4]);
+        else listHackMarks(match[4]);
+    }
+
+    function registerHackCommand() {
+        const player = {name:'player',required:true};
+        script.registerCommand({
+            name:'hack',
+            onExecute:() => hackMessage('Commands: .hack add <player>, .hack delete <player>, .hack list [page]'),
+            subcommands:[
+                {name:'add', parameters:[player], onExecute:name => editHackMark('add',name)},
+                {name:'delete', aliases:['remove','del'], parameters:[player], onExecute:name => editHackMark('delete',name)},
+                {name:'list', parameters:[{name:'page',required:false}], onExecute:page => listHackMarks(page)},
+            ],
+        });
+    }
+
     function selectWatchTarget(value) {
         if (!active || !antiCheatModule?.getEnabled()) return;
         const target = String(value);
@@ -317,7 +521,7 @@
         const uuid = target.slice(split + 1);
         const entity = Number(target.slice(0, split)) === watchWorldSequence ? loadedPlayer(client.level, uuid) : null;
         if (!entity || !client.player || entity === client.player) {
-            Client.displayChatMessage('§c[Anti-Cheat] 该玩家已离开当前加载区域。');
+            Client.displayChatMessage('§c[Anti-Cheat] Player is outside the loaded area.');
             return;
         }
         const original = watching?.original ?? client.getCameraEntity();
@@ -342,7 +546,7 @@
         const {entity, world, lastLine} = watching;
         if (client.level !== world || entity.isRemoved() || !entity.isAlive() || !world.hasChunkAt(entity.blockPosition())) {
             stopWatching();
-            if (client.player) Client.displayChatMessage('§c[Anti-Cheat] 玩家已离开加载区域，已退出观看。');
+            if (client.player) Client.displayChatMessage('§c[Anti-Cheat] Player left the loaded area. Watching stopped.');
             return;
         }
         if (client.getCameraEntity() !== entity) { stopWatching(); return; }
@@ -352,27 +556,29 @@
         const latest = messages.isEmpty() ? null : messages.get(0);
         const id = latest?.['liquid_bounce$getId']();
         if (id === watchMessageId && timestamp - lastLine < 7000) return;
-        antiCheatTypes.chat.chat(watchLink('[退出观看]', ''), antiCheatTypes.watchMetadata);
+        antiCheatTypes.chat.chat(watchLink('[Stop watching]', ''), antiCheatTypes.watchMetadata);
         watching.lastLine = timestamp;
     }
 
     function reportViolation(entity, state, check, timestamp, detail) {
         if (!enabledCheck(check)) return;
-        decayVl(state, timestamp);
+        resetVlIfDue(state, timestamp);
         const entry = state.checks.get(check);
-        if (entry && timestamp - entry.lastFlag < flagIntervalMs) return;
+        if (entry && timestamp - entry.lastFlag < Math.max(flagIntervalMs, option(check,'FlagIntervalSeconds') * 1000)) return;
         const name = String(entity.getName().getString());
         if (!/^[a-zA-Z0-9_]{1,16}$/.test(name)) return;
         const {chat, metadata} = antiCheatTypes;
-        const vl = (entry?.vl ?? 0) + 1;
-        state.checks.set(check, {vl, lastFlag:timestamp, decayAt:timestamp});
-        state.vl++;
+        const addedVl = option(check,'VL');
+        const vl = (entry?.vl ?? 0) + addedVl;
+        state.checks.set(check, {vl, lastFlag:timestamp});
+        state.vl += addedVl;
+        if (vlResetEnabled && state.resetVlAt == null) state.resetVlAt = timestamp + vlResetIntervalMs;
         const line = Component.literal('[').withColor(0xaaaaaa);
         for (const [part, color] of [['Anti-Cheat',0x55ffff], ['] ' + name,0xaaaaaa], [' failed ',0xffffff],
-            [check,0x55ffff], [` (vl:${vl.toFixed(1)})`,0xffffff]]) {
+            [CHECK_LABELS[check] ?? check,0x55ffff], [` (vl:${vl.toFixed(1)})`,0xffffff]]) {
             line.append(Component.literal(part).withColor(color));
         }
-        if (watchActions) line.append(watchLink(' [观看玩家]', `${watchWorldSequence}:${entity.getUUID()}`));
+        if (watchActions) line.append(watchLink(' [Watch]', `${watchWorldSequence}:${entity.getUUID()}`));
         if (detail) line.append(Component.literal(' ' + detail).withColor(0xaaaaaa));
         chat.chat(line, metadata);
         const alert = updateSuspicion(entity, state, name);
@@ -391,9 +597,9 @@
         if (state.vl < totalAlertThreshold || !name || !/^[a-zA-Z0-9_]{1,16}$/.test(name)) return false;
         const uuid = String(entity.getUUID());
         if (suspectMarks.has(uuid)) return false;
-        rememberSuspect(uuid);
+        rememberSuspect(uuid, name);
         const {chat, metadata} = antiCheatTypes;
-        const line = Component.literal(`[Anti-Cheat] ${name} 疑似是黑客 (vl:${state.vl.toFixed(1)})`).withColor(0xff5555);
+        const line = Component.literal(`[Anti-Cheat] ${name} is a suspected cheater (vl:${state.vl.toFixed(1)})`).withColor(0xff5555);
         for (let i = 0; i < 3; i++) chat.chat(line, metadata);
         return true;
     }
@@ -410,7 +616,7 @@
 
         if (trackAim && Math.abs(pitch) < 82 && yawStep >= .8 && yawStep < 35 && pitchStep < .2) {
             current.aim = previous.aim + 1;
-            if (current.aim >= 18) {
+            if (current.aim >= option('AimAssist','SmoothTicks')) {
                 reportViolation(entity, state, 'AimAssist', timestamp, `${current.aim} ticks / ${flagDetail(yawStep,'°')}`);
                 current.aim = 0;
             }
@@ -426,11 +632,11 @@
                 const distance = Math.hypot(x,z);
                 if (distance < .5 || distance > 5 || Math.abs(target.getY() - position.y) > 2) continue;
                 const targetYaw = Math.atan2(z,x) * 180 / Math.PI - 90;
-                if (Math.abs(yawDelta(yaw,targetYaw)) > 5 || Math.abs(yawDelta(previous.yaw,targetYaw)) < 25) continue;
+                if (Math.abs(yawDelta(yaw,targetYaw)) > option('AimAssist','AimAngle') || Math.abs(yawDelta(previous.yaw,targetYaw)) < 25) continue;
                 state.lastAimSnapSwing = lastSwing;
-                const snaps = state.aimSnaps = (state.aimSnaps ?? []).filter(at => timestamp - at < 4500);
+                const snaps = state.aimSnaps = (state.aimSnaps ?? []).filter(at => timestamp - at < option('AimAssist','WindowSeconds') * 1000);
                 snaps.push(timestamp);
-                if (snaps.length >= 3) {
+                if (snaps.length >= option('AimAssist','MinSnaps')) {
                     reportViolation(entity,state,'AimAssist',timestamp,`${snaps.length} swing snaps / ${flagDetail(yawStep,'°')}`);
                     snaps.length = 0;
                 }
@@ -458,12 +664,12 @@
         const elapsed = sample ? timestamp - sample.at : 0;
         const rate = sample ? Math.hypot(position.x - sample.x,position.z - sample.z) * 1000 / elapsed : 0;
         const movement = Number(entity.getAttributeValue(attributes.MOVEMENT_SPEED));
-        const minimum = Math.max(1.9, movement * 17);
+        const minimum = Math.max(option('NoSlow','MinSpeed'), movement * 17);
         const valid = elapsed >= 200 && elapsed <= 350 && Math.abs(position.y - sample.y) < .12
             && Math.abs(block.getFriction() - .6) < .01 && Math.abs(block.getSpeedFactor() - 1) < .01
             && rate >= minimum && rate < 18;
         state.noSlowSince = valid ? state.noSlowSince ?? timestamp : null;
-        if (state.noSlowSince !== null && timestamp - state.noSlowSince >= 450) {
+        if (state.noSlowSince !== null && timestamp - state.noSlowSince >= option('NoSlow','HoldSeconds') * 1000) {
             reportViolation(entity,state,'NoSlow',timestamp,`${animation === 'NONE' ? 'BLOCK' : animation} / ${flagDetail(rate,' b/s')}`);
             state.noSlowSince = timestamp;
         }
@@ -476,10 +682,10 @@
             return;
         }
         if (blink.stopped !== null && timestamp - blink.stopped >= 300 && timestamp - blink.stopped < 1600
-            && timestamp - antiCheatLastTraffic < 100 && step >= .7 && step < 3 && Math.abs(dy) < .25) {
-            blink.bursts = blink.bursts.filter(at => timestamp - at < 10_000);
+            && timestamp - antiCheatLastTraffic < 100 && step >= option('Blink','MinStep') && step < 3 && Math.abs(dy) < .25) {
+            blink.bursts = blink.bursts.filter(at => timestamp - at < option('Blink','WindowSeconds') * 1000);
             blink.bursts.push(timestamp);
-            if (blink.bursts.length >= 2) {
+            if (blink.bursts.length >= option('Blink','MinBursts')) {
                 reportViolation(entity, state, 'Blink', timestamp, flagDetail(step,' blocks'));
                 blink.bursts.length = 0;
             }
@@ -492,7 +698,7 @@
         if (state.landing) {
             const landing = state.landing;
             if (entity.hurtTime > 0 || !entity.onGround()) state.landing = null;
-            else if (timestamp - landing.at >= 500) {
+            else if (timestamp - landing.at >= option('NoFall','WaitSeconds') * 1000) {
                 reportViolation(entity, state, 'NoFall', timestamp, flagDetail(landing.drop,' blocks'));
                 state.landing = null;
             }
@@ -507,7 +713,7 @@
         if (!fall || timestamp - fall.at < 400) return;
         const safeFall = Number(entity.getAttributeValue(antiCheatTypes.attributes.SAFE_FALL_DISTANCE));
         const multiplier = Number(entity.getAttributeValue(antiCheatTypes.attributes.FALL_DAMAGE_MULTIPLIER));
-        if (position.y > fall.y - Math.max(5, safeFall + 2) || multiplier <= 0) return;
+        if (position.y > fall.y - Math.max(option('NoFall','MinDrop'), safeFall + 2) || multiplier <= 0) return;
         const pos = antiCheatTypes.blockPos.containing(position.x, position.y - .08, position.z);
         const support = level.getBlockState(pos), block = support.getBlock(), {blocks} = antiCheatTypes;
         if (support.isSolidRender() && ![blocks.SLIME_BLOCK,blocks.HAY_BLOCK,blocks.HONEY_BLOCK].some(special => special && block.equals(special))) {
@@ -545,7 +751,7 @@
                 antiCheatLastTraffic = timestamp;
                 if (!packet.hasRotation()) continue;
                 const pitch = Number(packet.getXRot());
-                if (!enabledCheck('Protocol') || Number.isFinite(pitch) && Math.abs(pitch) <= 90.5) continue;
+                if (!enabledCheck('Protocol') || Number.isFinite(pitch) && Math.abs(pitch) <= option('Protocol','MaxPitch') + .5) continue;
                 const entity = packet.getEntity(level);
                 const state = entity && antiCheatPlayers.get(String(entity.getUUID()));
                 if (state?.eligible && state.entity === entity && state.lastSeen === timestamp) reportViolation(entity, state, 'Protocol', timestamp, flagDetail(pitch,'° pitch'));
@@ -618,19 +824,20 @@
         const elapsed = timestamp - sample.started;
         const detail = `${key} / ${elapsed}ms`;
         if (sample.occluded) {
-            const recent = (state.occludedBreaks ?? []).filter(at => timestamp - at < 4000);
-            recent.push(timestamp);
+            const check = sample.bed ? 'BedNuker' : 'Nuker';
+            const recent = (state.occludedBreaks ?? []).filter(entry => entry.check === check && timestamp - entry.at < option(check,'WindowSeconds') * 1000);
+            recent.push({at:timestamp,check});
             state.occludedBreaks = recent;
-            if (sample.bed || recent.length >= 2) reportViolation(entity, state, sample.bed ? 'Bed Nuker' : 'Nuker', timestamp, detail);
+            if (recent.length >= option(check,'MinBreaks')) reportViolation(entity, state, sample.bed ? 'Bed Nuker' : 'Nuker', timestamp, detail);
         }
         const attributes = antiCheatTypes.attributes;
-        if (sample.hardness >= 2 && sample.initial <= 1 && sample.progress >= 6 && elapsed >= 50 && elapsed < 150
+        if (sample.hardness >= 2 && sample.initial <= 1 && sample.progress >= 6 && elapsed >= 50 && elapsed < option('FastMine','MaxBreakMs')
             && !entity.hasEffect(antiCheatTypes.effects.HASTE) && entity.getAttributeValue(attributes.BLOCK_BREAK_SPEED) <= 1
             && entity.getMainHandItem().getDestroySpeed(sample.blockState) <= 1) {
-            const recent = (state.fastBreaks ?? []).filter(at => timestamp - at < 5000);
+            const recent = (state.fastBreaks ?? []).filter(at => timestamp - at < option('FastMine','WindowSeconds') * 1000);
             recent.push(timestamp);
             state.fastBreaks = recent;
-            if (recent.length >= 3) reportViolation(entity, state, 'FastMine', timestamp, detail);
+            if (recent.length >= option('FastMine','MinBreaks')) reportViolation(entity, state, 'FastMine', timestamp, detail);
         }
     }
 
@@ -664,7 +871,7 @@
         current.check = movementCheck(previous, current, timestamp - previous.at);
         if (!current.check) return null;
         if (current.check === previous.check) current.since = previous.since;
-        if (timestamp - current.since < 800) return null;
+        if (timestamp - current.since < option(current.check,'HoldSeconds') * 1000) return null;
         current.since = timestamp;
         const detail = current.check === 'Air Hover' ? flagDetail(y - previous.y,' Δy') : flagDetail(Math.hypot(x - previous.x,z - previous.z) * 1000 / (timestamp - previous.at),' b/s');
         return {check:current.check, detail};
@@ -719,16 +926,16 @@
         state.eagle = null;
         if (cycle.placedAt === null || cycle.placedAt - cycle.at < 45 || timestamp - cycle.placedAt > 150) return null;
         const cycles = state.eagleCycles;
-        if (cycles.length && (timestamp - cycles[0].at > 7000 || cycles[0].axis !== cycle.axis
+        if (cycles.length && (timestamp - cycles[0].at > option('LegitScaffold','WindowSeconds') * 1000 || cycles[0].axis !== cycle.axis
             || cycles[0].direction !== cycle.direction)) cycles.length = 0;
         const previousCycle = cycles.at(-1);
         if (previousCycle && (cycle.next.getX() - previousCycle.next.getX() !== (cycle.axis === 'x' ? cycle.direction : 0)
             || cycle.next.getZ() - previousCycle.next.getZ() !== (cycle.axis === 'z' ? cycle.direction : 0)
             || cycle.next.getY() !== previousCycle.next.getY())) cycles.length = 0;
         cycles.push({...cycle, at:timestamp, duration:timestamp - cycle.at});
-        if (cycles.length < 5) return null;
+        if (cycles.length < option('LegitScaffold','MinCycles')) return null;
         const durations = cycles.map(entry => entry.duration);
-        if (Math.max(...durations) - Math.min(...durations) > 85) {
+        if (Math.max(...durations) - Math.min(...durations) > option('LegitScaffold','TimingMs')) {
             cycles.shift();
             return null;
         }
@@ -745,16 +952,16 @@
         combat.blockingSince = blocking ? combat.blockingSince ?? timestamp : null;
         const swinging = entity.isSwinging(), progress = swinging ? entity.getSwingAnimation(0) : 0;
         if (swinging && (!combat.swinging || progress + .1 < combat.progress)) {
-            combat.swings.push({at:timestamp, held:combat.blockingSince !== null && timestamp - combat.blockingSince >= 500});
+            combat.swings.push({at:timestamp, held:combat.blockingSince !== null && timestamp - combat.blockingSince >= option('AutoBlock','BlockTimeSeconds') * 1000});
             if (timestamp - (combat.lastPacketSwing ?? -Infinity) > 200) recordSwing(entity,state,timestamp,timestamp,false);
         }
         combat.swinging = swinging;
         combat.progress = progress;
-        while (combat.swings.length && timestamp - combat.swings[0].at > 9000) combat.swings.shift();
-        if (!enabledCheck('AutoBlock') || combat.swings.length < 7 || timestamp - combat.lastFlag < 2000) return null;
+        while (combat.swings.length && timestamp - combat.swings[0].at > option('AutoBlock','WindowSeconds') * 1000) combat.swings.shift();
+        if (!enabledCheck('AutoBlock') || combat.swings.length < option('AutoBlock','MinSwings') || timestamp - combat.lastFlag < 2000) return null;
         const latest = combat.swings.at(-1), held = combat.swings.filter(swing => swing.held).length;
         if (!latest.held || timestamp - latest.at > 100 || latest.at - combat.swings[0].at < 1800
-            || held / combat.swings.length < .85) return null;
+            || held / combat.swings.length < option('AutoBlock','BlockRatio')) return null;
         combat.lastFlag = timestamp;
         return `${held}/${combat.swings.length} swings`;
     }
@@ -773,13 +980,15 @@
         const times = combat.clickTimes;
         if (times.length && arrival - times.at(-1) > 320) times.length = 0;
         times.push(arrival);
-        while (times.length > 2 && arrival - times[0] > 1500) times.shift();
-        if (times.length < 9) return;
+        while (times.length > 2 && arrival - times[0] > option('AutoClicker','WindowSeconds') * 1000) times.shift();
+        if (times.length < option('AutoClicker','MinSwings')) return;
         const intervals = times.slice(1).map((at,i) => at - times[i]);
         const mean = (arrival - times[0]) / intervals.length;
         if (mean < 40 || mean > 175 || intervals.filter(gap => gap >= 35).length < intervals.length * .8) return;
         const deviation = Math.sqrt(intervals.reduce((sum,gap) => sum + (gap - mean) ** 2,0) / intervals.length);
-        if (mean <= 75 || deviation <= 20) reportViolation(entity,state,'AutoClicker',timestamp,flagDetail(1000 / mean,' swings/s'));
+        if (1000 / mean >= option('AutoClicker','MaxCPS') || deviation <= option('AutoClicker','TimingMs')) {
+            reportViolation(entity,state,'AutoClicker',timestamp,flagDetail(1000 / mean,' swings/s'));
+        }
     }
 
     function blockKey(pos) { return `${pos.getX()},${pos.getY()},${pos.getZ()}`; }
@@ -795,13 +1004,15 @@
         const movedAt = step >= .045 && step < 1.5 ? timestamp : old?.movedAt ?? 0;
         const swingAt = entity.isSwinging() ? timestamp : old?.swingAt ?? 0;
         const grounded = entity.onGround(), feet = Math.floor(position.y - .08);
-        const launch = grounded ? null : old?.grounded && position.y - old.y >= .18
+        const launch = grounded ? null : old?.grounded && position.y - old.y >= .06
             ? {y:old.y, at:timestamp, x:old.x, z:old.z} : old?.launch ?? null;
+        const recentLaunch = old?.launch ?? old?.recentLaunch ?? null;
         const builder = state.builder = {...position, movedAt, swingAt, held, air:null, pitch:Number(entity.getXRot()),
-            sneaking:entity.isShiftKeyDown(), grounded, launch, descending:!!old && position.y < old.y - .02};
+            sneaking:entity.isShiftKeyDown(), grounded, launch, recentLaunch, descending:!!old && position.y < old.y - .02};
         if (timestamp - movedAt > 280 || step >= 1.5) return;
         const air = builder.air = new Map();
-        const start = launch && timestamp - launch.at < 900 ? Math.max(feet - 2, Math.floor(launch.y - .08)) : feet;
+        const jump = launch ?? (recentLaunch && timestamp - recentLaunch.at < option('TellyScaffold','JumpTimeSeconds') * 1000 ? recentLaunch : null);
+        const start = jump ? Math.max(feet - 2, Math.floor(jump.y - .08)) : feet;
         for (let y = start; y <= feet; y++) {
             for (let dx = -1; dx <= 1; dx++) {
                 for (let dz = -1; dz <= 1; dz++) {
@@ -830,18 +1041,18 @@
         }
         const builder = candidate.builder, block = blockState.getBlock();
         if (builder.held.some(held => held === block || held.equals?.(block))) {
-            const jump = builder.launch;
+            const jump = builder.launch ?? builder.recentLaunch;
             const at = now();
-            const telly = jump && builder.descending && !builder.sneaking && at - jump.at < 850
-                && Math.hypot(builder.x - jump.x,builder.z - jump.z) >= .65
+            const telly = jump && !builder.sneaking && at - jump.at < option('TellyScaffold','JumpTimeSeconds') * 1000
+                && Math.hypot(builder.x - jump.x,builder.z - jump.z) >= option('TellyScaffold','MinTravel')
                 && pos.getY() === Math.floor(jump.y - .08);
             const airBelow = depth => {
                 const below = pos.offset(0,-depth,0);
                 return client.level.hasChunkAt(below) && client.level.getBlockState(below).isAir();
             };
-            const openBelow = (telly || enabledCheck('Scaffold') && builder.pitch >= 65 && !builder.sneaking) && airBelow(1) && airBelow(2);
-            const overVoid = openBelow && builder.pitch >= 65 && airBelow(3) && airBelow(4);
-            remoteBlockUpdates.set(key, {state:candidate, at, overVoid, builder, foot:builder.air.get(key), telly:telly && openBelow});
+            const openBelow = (telly || enabledCheck('Scaffold') && builder.pitch >= option('Scaffold','MinPitch') && !builder.sneaking) && airBelow(1) && airBelow(2);
+            const overVoid = openBelow && builder.pitch >= option('Scaffold','MinPitch') && airBelow(3) && airBelow(4);
+            remoteBlockUpdates.set(key, {state:candidate, at, overVoid, builder, jump, foot:builder.air.get(key), telly:telly && openBelow});
         }
     }
 
@@ -967,23 +1178,24 @@
     // Adapted from ClientSide-AC's recent-placement rate (see script/README.md).
     function sampleScaffold(state, timestamp) {
         const placements = state.placements;
-        while (placements.length && timestamp - placements[0].at >= SCAFFOLD_WINDOW) placements.shift();
-        const rate = placements.length * 1000 / SCAFFOLD_WINDOW;
-        if (rate <= 3.5 || state.lastBpsPlacement === placements.at(-1).at) return null;
+        const window = option('ScaffoldBPS','WindowSeconds') * 1000;
+        while (placements.length && timestamp - placements[0].at >= window) placements.shift();
+        const rate = placements.length * 1000 / window;
+        if (!placements.length || rate <= option('ScaffoldBPS','MaxBPS') || state.lastBpsPlacement === placements.at(-1).at) return null;
         state.lastBpsPlacement = placements.at(-1).at;
         return flagDetail(rate,' b/s');
     }
 
     function sampleScaffoldPattern(state, placement, timestamp) {
         const builder = placement.builder;
-        if (builder.sneaking || builder.pitch < 65 || builder.pitch > 90 || !placement.overVoid) {
+        if (builder.sneaking || builder.pitch < option('Scaffold','MinPitch') || builder.pitch > 90 || !placement.overVoid) {
             state.scaffoldPattern = [];
             return;
         }
-        const placements = (state.scaffoldPattern ?? []).filter(at => timestamp - at < 2000);
+        const placements = (state.scaffoldPattern ?? []).filter(at => timestamp - at < option('Scaffold','WindowSeconds') * 1000);
         placements.push(timestamp);
         state.scaffoldPattern = placements;
-        if (placements.length < 4 || timestamp - placements[0] < 450) return;
+        if (placements.length < option('Scaffold','MinBlocks') || timestamp - placements[0] < 450) return;
         reportViolation(state.entity, state, 'Scaffold', timestamp, `${placements.length} blocks / ${flagDetail(builder.pitch,'°')}`);
         placements.length = 0;
     }
@@ -991,15 +1203,158 @@
     function sampleTelly(state, placement, timestamp) {
         if (!placement.telly) return;
         const jumps = state.tellyJumps;
-        const launch = placement.builder.launch.at;
-        while (jumps.length && timestamp - jumps[0].launch > 4500) jumps.shift();
+        const launch = placement.jump.at;
+        while (jumps.length && timestamp - jumps[0].launch > option('TellyScaffold','WindowSeconds') * 1000) jumps.shift();
         if (jumps.at(-1)?.launch === launch) {
             jumps.at(-1).blocks++;
         } else jumps.push({launch,blocks:1});
-        if (jumps.length >= 2 && jumps.reduce((sum,jump) => sum + jump.blocks,0) >= 3) {
+        if (jumps.length >= option('TellyScaffold','MinJumps') && jumps.reduce((sum,jump) => sum + jump.blocks,0) >= option('TellyScaffold','MinBlocks')) {
             reportViolation(state.entity,state,'Telly Scaffold',timestamp,`${jumps.length} jumps / ${jumps.reduce((sum,jump) => sum + jump.blocks,0)} blocks`);
-            jumps.length = 0;
         }
+    }
+
+    function loadProjectileTypes() {
+        const Items = type('net.minecraft.world.item.Items');
+        return {
+            projectile:type('net.minecraft.world.entity.projectile.Projectile'),
+            arrow:type('net.minecraft.world.entity.projectile.arrow.AbstractArrow'),
+            throwable:type('net.minecraft.world.entity.projectile.ThrowableProjectile'),
+            trident:type('net.minecraft.world.entity.projectile.arrow.ThrownTrident'),
+            wind:type('net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge'),
+            fireball:type('net.minecraft.world.entity.projectile.hurtingprojectile.Fireball'),
+            bow:Items.BOW,
+            throws:new Set([Items.SNOWBALL,Items.EGG,Items.ENDER_PEARL,Items.SPLASH_POTION,
+                Items.LINGERING_POTION,Items.EXPERIENCE_BOTTLE,Items.WIND_CHARGE,Items.TRIDENT,Items.FIRE_CHARGE]),
+        };
+    }
+
+    function projectileAim(entity, targets, timestamp, state) {
+        const range = option('AutoThrow','Range'), angle = option('AutoThrow','AimAngle');
+        const view = entity.getViewVector(1);
+        const x = entity.getX(), y = entity.getEyeY(), z = entity.getZ();
+        let best = Math.cos(angle * Math.PI / 180), targetId = null;
+        for (const target of targets) {
+            if (target.entity === entity) continue;
+            const dx = target.x - x, dy = target.y - y, dz = target.z - z;
+            const distance = Math.hypot(dx,dy,dz);
+            if (distance < 1 || distance > range) continue;
+            const alignment = (dx * view.x() + dy * view.y() + dz * view.z()) / distance;
+            if (alignment < best) continue;
+            best = alignment;
+            targetId = target.uuid;
+        }
+        const previous = state.projectileLock;
+        state.projectileLock = targetId ? {
+            uuid:targetId, since:previous?.uuid === targetId ? previous.since : timestamp,
+        } : null;
+    }
+
+    function recordProjectile(state, check, timestamp, lock) {
+        const key = check === 'AutoThrow' ? 'throwEvents' : 'arrowEvents';
+        const window = option(check,'WindowSeconds') * 1000;
+        const events = state[key];
+        while (events.length && timestamp - events[0].at >= window) events.shift();
+        events.push({at:timestamp, target:lock?.uuid ?? null,
+            locked:!!lock && timestamp - lock.since >= option('AutoThrow','LockSeconds') * 1000});
+        if (events.length > 256) events.shift();
+        const minimum = option(check, check === 'AutoThrow' ? 'MinThrows' : 'MinArrows');
+        const rate = events.length * 1000 / window;
+        if (events.length < minimum || rate <= option(check,'MaxRate')) return;
+        if (check === 'AutoThrow') {
+            if (!lock) return;
+            const locked = events.filter(event => event.locked && event.target === lock.uuid).length;
+            if (locked / events.length < option(check,'LockRatio')) return;
+        }
+        reportViolation(state.entity,state,check,timestamp,`${events.length} / ${window / 1000}s / ${flagDetail(rate,' per second')}`);
+    }
+
+    function tickProjectiles(timestamp) {
+        const level = client.level, local = client.player;
+        if (!level || !local || !enabledCheck('AutoThrow') && !enabledCheck('AutoBow')) {
+            seenProjectiles.clear();
+            projectileWorld = null;
+            return;
+        }
+        if (timestamp - projectilePollAt < 100) return;
+        const seed = projectileWorld !== level || timestamp - projectilePollAt > 350;
+        if (seed) {
+            seenProjectiles.clear();
+            for (const state of antiCheatPlayers.values()) clearProjectileEvidence(state);
+        }
+        projectileWorld = level;
+        projectilePollAt = timestamp;
+        projectileTypes ??= loadProjectileTypes();
+        const types = projectileTypes, targets = [];
+        const addTarget = entity => targets.push({entity, uuid:String(entity.getUUID()),
+            x:entity.getX(), y:entity.getEyeY(), z:entity.getZ()});
+        if (enabledCheck('AutoThrow')) addTarget(local);
+        for (const state of antiCheatPlayers.values()) {
+            if (!state.eligible || state.lastSeen !== timestamp) continue;
+            const entity = state.entity;
+            const main = entity.getMainHandItem().getItem(), off = entity.getOffhandItem().getItem();
+            if (main === types.bow || off === types.bow) state.bowHeldAt = timestamp;
+            state.throwHeld = types.throws.has(main) || types.throws.has(off);
+            if (enabledCheck('AutoThrow')) addTarget(entity);
+        }
+        if (enabledCheck('AutoThrow')) for (const state of antiCheatPlayers.values()) {
+            if (state.eligible && state.lastSeen === timestamp && state.throwHeld) projectileAim(state.entity,targets,timestamp,state);
+            else state.projectileLock = null;
+        }
+        const range = Math.max(enabledCheck('AutoThrow') ? option('AutoThrow','Range') : 0,
+            enabledCheck('AutoBow') ? option('AutoBow','Range') + option('AutoBow','TargetRadius') : 0);
+        const projectiles = level.getEntitiesOfClass(types.projectile.class,local.getBoundingBox().inflate(range)).iterator();
+        const damage = enabledCheck('AutoBow') ? local.getLastDamageSource() : null;
+        const hitArrow = damage?.getDirectEntity();
+        const hit = local.hurtTime > 0 && hitArrow instanceof types.arrow ? hitArrow : null;
+        let sampled = 0;
+        while (projectiles.hasNext() && sampled++ < 512) {
+            observeProjectile(projectiles.next(),types,timestamp,seed,hit);
+        }
+        if (hit) observeProjectile(hit,types,timestamp,seed,hit);
+        for (const [projectile, entry] of seenProjectiles) {
+            if (timestamp - entry.lastSeen > 2000) seenProjectiles.delete(projectile);
+        }
+    }
+
+    function observeProjectile(projectile, types, timestamp, seed, hit) {
+        let entry = seenProjectiles.get(projectile);
+        if (projectile.tickCount > 10 && (!entry || entry.arrowCounted || !(projectile instanceof types.arrow))) {
+            seenProjectiles.delete(projectile);
+            return;
+        }
+        if (!entry) {
+            if (seenProjectiles.size >= 1024) return;
+            entry = {lastSeen:timestamp, initialized:seed, throwCounted:seed, arrowCounted:seed || projectile.tickCount > 10, bow:false};
+            seenProjectiles.set(projectile,entry);
+        }
+        entry.lastSeen = timestamp;
+        const entity = projectile.getOwner();
+        if (!entity || entity === client.player) return;
+        const state = antiCheatPlayers.get(String(entity.getUUID()));
+        if (!state?.eligible || state.entity !== entity || state.lastSeen !== timestamp) return;
+        const local = client.player;
+        const distance = Math.hypot(entity.getX() - local.getX(),entity.getY() - local.getY(),entity.getZ() - local.getZ());
+        const thrown = projectile instanceof types.throwable || projectile instanceof types.wind
+            || projectile instanceof types.fireball || projectile instanceof types.trident;
+        if (enabledCheck('AutoThrow') && thrown && !entry.throwCounted) {
+            entry.throwCounted = true;
+            if (projectile.tickCount <= 10 && state.throwHeld && distance <= option('AutoThrow','Range')) {
+                recordProjectile(state,'AutoThrow',timestamp,state.projectileLock);
+            }
+        }
+        if (!enabledCheck('AutoBow') || thrown || !(projectile instanceof types.arrow) || entry.arrowCounted) return;
+        if (!entry.initialized) {
+            entry.initialized = true;
+            const weapon = projectile.getWeaponItem();
+            entry.bow = weapon && !weapon.isEmpty() ? weapon.getItem() === types.bow
+                : timestamp - (state.bowHeldAt ?? -Infinity) <= 800;
+        }
+        if (!entry.bow || distance < option('AutoBow','MinDistance') || distance > option('AutoBow','Range')) return;
+        if (projectile !== hit && projectile.distanceToSqr(local) > option('AutoBow','TargetRadius') ** 2) return;
+        if (projectile !== hit && projectile.getDeltaMovement().lengthSqr() < .01) return;
+        // An arrow is counted once when it approaches us or actually hits us.
+        entry.arrowCounted = true;
+        recordProjectile(state,'AutoBow',timestamp,null);
     }
 
     function tickAntiCheat(timestamp) {
@@ -1015,13 +1370,7 @@
         antiCheatTypes ??= loadAntiCheatTypes();
         if (!watchActions && musicLoader && !errors.some(error => error.startsWith('Anti-cheat watch:'))) {
             try {
-                const actions = musicLoader.loadClass('opai.bridge.WatchActions');
-                antiCheatTypes.click = type('net.ccbluex.liquidbounce.utils.text.RunnableClickEvent');
-                antiCheatTypes.chatHud = type('net.ccbluex.liquidbounce.utils.client.ChatHudExtensionKt');
-                const messages = type('net.minecraft.client.gui.components.ChatComponent').class.getDeclaredField('allMessages');
-                messages.setAccessible(true);
-                antiCheatTypes.chatMessages = messages;
-                watchActions = actions.getConstructor(Consumer.class).newInstance(new Consumer(selectWatchTarget));
+                ensureChatActions();
             } catch (error) { warn('Anti-cheat watch',error); }
         }
         if (!antiCheatPacketHook && !errors.some(error => error.startsWith('Anti-cheat packet checks:'))) {
@@ -1030,7 +1379,7 @@
             } else warn('Anti-cheat packet checks','Install the matching Opai theme bundle for packet-based checks.');
         }
         for (const [key, update] of remoteBlockUpdates) {
-            if (timestamp - update.at > 200) { remoteBlockUpdates.delete(key); continue; }
+            if (timestamp - update.at > 350) { remoteBlockUpdates.delete(key); continue; }
             const builder = update.builder;
             if (!update.state.eligible || update.state.entity.isRemoved()) { remoteBlockUpdates.delete(key); continue; }
             if (!update.foot && !update.telly) { remoteBlockUpdates.delete(key); continue; }
@@ -1053,17 +1402,21 @@
             if (!state || state.entity !== entity) {
                 state = {entity, vl:0, checks:new Map(), lastSeen:timestamp, graceUntil:timestamp + 1000};
                 clearEvidence(state);
+                clearProjectileEvidence(state);
                 antiCheatPlayers.set(id, state);
             }
-            if (timestamp - state.lastSeen > 350) { clearEvidence(state); state.combat = null; }
+            if (timestamp - state.lastSeen > 350) { clearEvidence(state); clearProjectileEvidence(state); state.combat = null; }
             state.lastSeen = timestamp;
-            decayVl(state, timestamp);
+            const placementWindow = Math.max(option('ScaffoldBPS','WindowSeconds'), option('TellyScaffold','WindowSeconds')) * 1000;
+            while (state.placements.length && timestamp - state.placements[0].at >= placementWindow) state.placements.shift();
+            resetVlIfDue(state, timestamp);
             const mode = connection.getPlayerInfo(entity.getUUID())?.getGameMode();
             state.eligible = mode?.isSurvival() === true && entity.isAlive() && !entity.isPassenger() && !entity.isSleeping();
             if (!state.eligible) {
                 state.combat = null;
                 state.graceUntil = timestamp + 1000;
                 clearEvidence(state);
+                clearProjectileEvidence(state);
                 continue;
             }
             const combat = sampleAutoBlock(entity, state, timestamp);
@@ -1089,6 +1442,7 @@
             if (state.vl >= totalAlertThreshold && !suspectMarks.has(id)) updateSuspicion(entity, state, String(entity.getName().getString()));
         }
         if (pendingAntiCheatPackets) processAntiCheatPackets(level, timestamp);
+        try { tickProjectiles(timestamp); } catch (error) { warn('Projectile checks',error); }
         try { syncTabMarks(connection,local); } catch (error) { warn('Anti-cheat Tab list',error); }
         tickWatch(timestamp);
         for (const [id, state] of antiCheatPlayers) {
@@ -1140,6 +1494,7 @@
     }
     try{registerMusicModule();}catch(error){warn('Music module registration',error);}
     try{registerAntiCheatModule();}catch(error){warn('Anti-cheat module registration',error);}
+    try{registerHackCommand();}catch(error){warn('Hack command registration',error);}
     function startMusic(){
         let found=false;
         try{
@@ -1212,7 +1567,8 @@
 
     function prepare(entity, distance, cached, timestamp=now()) {
         const hp = health(entity), meters = Math.round(distance);
-        const suspect = suspectMarks.size > 0 && entity !== client.player && suspectMarks.has(String(entity.getUUID()));
+        const suspect = antiCheatModule?.getEnabled() === true && suspectMarks.size > 0
+            && entity !== client.player && suspectMarks.has(String(entity.getUUID()));
         let name = cached?.name, friend = cached?.friend, metadataAt = cached?.metadataAt ?? 0;
         if (!cached || timestamp - metadataAt >= 500) {
             const currentName = Entity.getSimpleDisplayName(entity);
@@ -1307,12 +1663,65 @@
         if(!changedByUser){changing=true;try{NativeTags.setEnabled(originalEnabled);}finally{changing=false;}}
         originalHook=null;records=[];
     }
+    let preferenceRecord, featureRecord;
     function readFeatures(){
-        const preferences = decode(storage().get('opai.preferences'));
-        icmpEnabled = preferences?.icmpPing !== false;
-        const data=decode(storage().get(PREFIX+'features'));if(data&&data.protocol===1)for(const key of ['serverInfo','nametags','preview'])if(typeof data[key]==='boolean')features[key]=data[key];
+        const store = storage(), rawPreferences = store.get('opai.preferences'), rawFeatures = store.get(PREFIX+'features');
+        if (rawPreferences !== preferenceRecord) {
+            preferenceRecord = rawPreferences;
+            icmpEnabled = decode(rawPreferences)?.icmpPing !== false;
+        }
+        if (rawFeatures !== featureRecord) {
+            featureRecord = rawFeatures;
+            const data = decode(rawFeatures);
+            if (data?.protocol === 1) for (const key of ['serverInfo','nametags','preview']) {
+                if (typeof data[key] === 'boolean') features[key] = data[key];
+            }
+        }
         if(features.nametags&&!tagFailed){try{claimTags();}catch(error){tagFailed=true;warn('Nametags',error);restoreTags();}}
         else restoreTags();
+    }
+    let combatEntity = null, combatUntil = 0, combatUuid = null, combatHurtTime = 0, combatHitAt = 0, playerType;
+    function clearCombatTarget() {
+        combatEntity = combatUuid = null;
+        combatUntil = combatHurtTime = combatHitAt = 0;
+    }
+
+    function trackCombatTarget(event) {
+        const entity = event.getEntity();
+        playerType ??= type('net.minecraft.world.entity.player.Player');
+        if (!(entity instanceof playerType)) return;
+        if (entity !== combatEntity) {
+            clearCombatTarget();
+            combatEntity = entity;
+            combatUuid = String(entity.getUUID());
+            combatHurtTime = Number(entity.hurtTime);
+        }
+        combatUntil = now() + 1100;
+    }
+    function sampleCombatTarget(timestamp) {
+        const entity = combatEntity, local = client.player;
+        if (!entity) return;
+        if (timestamp >= combatUntil || !local || entity.level() !== client.level || entity.isRemoved()) {
+            clearCombatTarget();
+            return;
+        }
+        const hurtTime = Number(entity.hurtTime);
+        if (hurtTime > combatHurtTime) combatHitAt = timestamp;
+        combatHurtTime = hurtTime;
+    }
+
+    function combatTargetSnapshot() {
+        const entity = combatEntity, local = client.player;
+        if (!entity || !local || entity.level() !== client.level) return null;
+        return {
+            uuid: combatUuid,
+            health: Number(Entity.getActualHealth(entity, true)),
+            grounded: entity.onGround(),
+            visible: local.hasLineOfSight(entity),
+            age: Number(entity.tickCount),
+            hurtTime: combatHurtTime,
+            lastHitAt: combatHitAt,
+        };
     }
     // Activity runs at tick cadence, never from a new per-frame world callback.
     let bedModule,packetMine,bedProvider,blockRegistry;
@@ -1426,7 +1835,9 @@
             }
         }
         lastPublish=now();
-        storage().put(PREFIX+'snapshot',JSON.stringify({protocol:1,version:VERSION,at:lastPublish,connected:active,inWorld,singleplayer,serverAddress,serverIP,ping,pingSource:'icmp',worldInfo:worldInfo(),scaffoldBps,
+        let combatTarget = null;
+        try { combatTarget = combatTargetSnapshot(); } catch (error) { clearCombatTarget();warn('Target HUD',error); }
+        storage().put(PREFIX+'snapshot',JSON.stringify({protocol:1,version:VERSION,at:lastPublish,connected:active,inWorld,singleplayer,serverAddress,serverIP,ping,pingSource:'icmp',worldInfo:worldInfo(),scaffoldBps,combatTarget,
             capabilities:{activity:true,serverInfo:features.serverInfo,nametags:tookTags&&!tagFailed,preview:features.preview},previewError:previewFailed?errors.find(x=>x.startsWith('Preview:')):null,errors}));
     }
     function heartbeat(){activityTick();if(now()-lastPublish>=250){const probe=decode(storage().get(PREFIX+'renderProbe'));renderPaused=!!(probe&&probe.protocol===1&&probe.paused===true&&Number.isFinite(probe.at)&&now()-probe.at>=0&&now()-probe.at<2000);readFeatures();publish();}}
@@ -1443,6 +1854,7 @@
         const timestamp = now();
         try { tickAntiCheat(timestamp); } catch (error) { warn('Anti-cheat', error); }
         try { tickScaffold(timestamp); syncBlockHooks(); } catch (error) { scaffoldBps = null; warn('Scaffold BPS', error); }
+        try { sampleCombatTarget(timestamp); } catch (error) { clearCombatTarget();warn('Target HUD', error); }
         try {
             heartbeat();
             if (tagWorld !== client.level) {
@@ -1504,6 +1916,7 @@
         }catch(error){previewFailed=true;lastPreviewError=now();request=null;warn('Preview',error);publish();}
     }
     function stop(){
+        clearCombatTarget();
         stopAntiCheatPacketHook();resetAntiCheat();antiCheatTypes=null;resetScaffold();scaffoldTypes=null;blockChangeHook=chunkDeltaHook=null;blockHookMode=0;
         pendingMusicOpen=false;lastMusicConfig='';worldLyricsEnabled=false;worldDirty=false;worldHook=null;worldEvent=null;renderPaused=false;worldTypes=null;worldLayouts.clear();closeRuntime();
         activityMenu=null;activityContainer=null;activitySlots=[];activityFeedback=[];activityMouseHook=null;activityTypes=null;bedModule=packetMine=bedProvider=blockRegistry=undefined;activityHadState=false;lastActivitySample=0;lastActivityWrite=0;storage().remove(PREFIX+'activity');storage().remove(PREFIX+'containerView');storage().remove(PREFIX+'containerClick');
@@ -1513,7 +1926,7 @@
     script.on('enable',()=>{
         if(active)return;active=true;lastPublish=0;lastPreviewError=0;tagFailed=previewFailed=false;errors=[];
         owner=new Listener({getRunning:()=>active,getDebugOwnerId:()=>'OpaiBridge'});
-        try{hook(TickEvent,-500,tick);hook(OverlayEvent,-2000,drawTags);hook(ScreenEvent,-30000,drawPreview);hook(ShutdownEvent,30000,stop);
+        try{hook(TickEvent,-500,tick);hook(OverlayEvent,-2000,drawTags);hook(ScreenEvent,-30000,drawPreview);hook(ShutdownEvent,30000,stop);hook(AttackEvent,-2000,trackCombatTarget);
             hook(ModuleToggleEvent,-1000,event=>{
                 const name=String(event.getModuleName()).toLowerCase();
                 if(tookTags&&!changing&&name==='nametags')changedByUser=true;

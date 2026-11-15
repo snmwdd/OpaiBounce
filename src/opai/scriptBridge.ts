@@ -1,7 +1,8 @@
 import {get,writable} from 'svelte/store';
 import {getPersistentStorageItem,putPersistentStorageItem} from '../integration/rest';
 export const BRIDGE={snapshot:'opai.bridge.snapshot',request:'opai.bridge.preview',features:'opai.bridge.features',protocol:1} as const;
-export type BridgeState={protocol:1;version:string;at:number;connected:boolean;serverAddress:string|null;serverIP?:string|null;ping:number|null;pingSource?:'icmp';inWorld:boolean;singleplayer?:boolean;scaffoldBps?:number|null;worldInfo?:{biome:string|null;dimension:string|null}|null;previewError?:string|null;capabilities:{serverInfo:boolean;nametags:boolean;preview:boolean;activity?:boolean};errors:string[]};
+export type CombatTarget = {uuid:string; health:number; grounded:boolean; visible:boolean; age:number; hurtTime:number; lastHitAt:number};
+export type BridgeState={protocol:1;version:string;at:number;connected:boolean;serverAddress:string|null;serverIP?:string|null;ping:number|null;pingSource?:'icmp';inWorld:boolean;singleplayer?:boolean;scaffoldBps?:number|null;worldInfo?:{biome:string|null;dimension:string|null}|null;combatTarget?:CombatTarget|null;previewError?:string|null;capabilities:{serverInfo:boolean;nametags:boolean;preview:boolean;activity?:boolean};errors:string[]};
 export type PreviewRequest={protocol:1;owner:string;at:number;module:string;rect:{x:number;y:number;width:number;height:number};viewport:{width:number;height:number};options:Record<string,unknown>};
 export const bridgeState=writable<BridgeState|null>(null);
 export const previewModule=writable<{name:string;anchor:HTMLElement;settings:unknown}|null>(null);

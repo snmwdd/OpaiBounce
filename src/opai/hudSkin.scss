@@ -1,4 +1,12 @@
 :root{--opai-hud-surface:#0009;--opai-hud-heading:#20202098;--opai-hud-text:#ede0de;--opai-hud-muted:#b9b9b9}
+:root[data-opai-hud-background="solid"]{
+    --opai-hud-surface:#242424;
+    --opai-hud-heading:#303030;
+    --opai-hud-panel:#242424;
+    --opai-hud-tile:#303030;
+    --opai-hud-track:#363636;
+    --opai-hud-backdrop:none;
+}
 .hud{--keystrokes-background-color:var(--opai-hud-surface);--keystrokes-text-color:var(--opai-hud-text);font-family:'Google Sans','Opai CJK',sans-serif;color:var(--opai-hud-text)}
 .hud .contained-element .keybinds,.hud .contained-element .scoreboard{background:var(--opai-hud-surface);border-radius:14px;font-size:18px;color:var(--opai-hud-text);overflow:hidden}
 .hud .contained-element .keybinds{min-width:220px;max-width:340px}

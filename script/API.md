@@ -14,7 +14,7 @@ unsubscribe();
 
 ```ts
 {
-  protocol: 1, version: '1.9.1', at: number, connected: true,
+  protocol: 1, version: '1.10.0', at: number, connected: true,
   inWorld: boolean, singleplayer: boolean,
   worldInfo: {biome: string | null, dimension: string | null} | null, // 1.2.0 新增
   serverAddress: string | null, // 当前连接的输入地址，含可能的端口
@@ -22,6 +22,8 @@ unsubscribe();
   ping: number | null,          // 当前多人连接远端 IP 的 ICMP 往返毫秒数
   pingSource: 'icmp',           // 未测到有效回应时，ping 为 null
   scaffoldBps: number | null,  // 本机 Scaffold 最近两秒确认放置数 / 2
+  combatTarget: {uuid: string, health: number, grounded: boolean, visible: boolean,
+    age: number, hurtTime: number, lastHitAt: number} | null, // 本机最近攻击的目标
   capabilities: {serverInfo: boolean, nametags: boolean, preview: boolean},
   previewError: string | null, // 模型暂时不可用时提示，后续成功绘制会清空
   errors: string[]

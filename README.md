@@ -1,6 +1,6 @@
 # OpaiBounce
 
-An Opai-style LiquidBounce theme and companion LiquidScript. Current theme **1.1.0**, script **1.9.1**.
+An Opai-style LiquidBounce theme and companion LiquidScript. Current theme **1.1.2**, script **1.10.0**.
 
 [简体中文](README简体中文.md)
 # The Script Must Be Installed for the Theme to Function Properly
@@ -51,7 +51,7 @@ Passing automated checks does not mean that in-game performance or visuals have 
 
 ## Installation
 
-Download `OpaiBounce-1.1.0.zip` from [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases/latest) or build it with `npm run package`.
+Download the matching theme and script from [GitHub Releases](https://github.com/snmwdd/OpaiBounce/releases) or run `npm run package` to build `release/OpaiBounce-1.1.2.zip` from this checkout.
 
 1. Run `.client theme browse` in-game, then copy the entire `opai` folder from `themes/opai` inside the installation package into the theme directory that opens.
 2. Install the official LiquidBounce Script API extension. Run `.script browse`, then place `scripts/OpaiBounceScript.js` from the installation package into the scripts directory. Make sure only one copy of the script is present.
@@ -63,9 +63,11 @@ The script provides server addresses / Ping, entity previews, and Opai Nametags.
 
 Chest GUI hiding and cursor unlocking use ChestStealer's own SilentScreen / UnlockCursor settings.
 
-Open Configurations → Settings → Opai in ClickGUI to adjust shadows, blur, the Dynamic Island layout, whether configurations restore key binds, independent ping, and the ClickGUI search capsule. The lower-left capsule searches module names and aliases. Independent ping uses system ICMP to measure the current server every five seconds and shows `—` when there is no reply.
+Open Configurations → Settings → Opai in ClickGUI to adjust shadows, blur, the Dynamic Island and Target HUD layouts, the HUD background, whether configurations restore key binds, independent ping, and the ClickGUI search capsule. The lower-left capsule searches module names and aliases. Independent ping uses system ICMP to measure the current server every five seconds and shows `—` when there is no reply.
 
-Enable `Anti-cheat` under Misc to see check-specific violation levels and a spectate link in local chat. Watching switches your camera locally and ends when the player leaves the loaded area. Checks can be toggled individually, and `Flag Interval Seconds` limits alerts per player and check. `VL Above 10 To Alert` defaults to `1`. At 11 total VL, the module sends three red warnings and marks the player with a red skull. Player marks persist per server or singleplayer world and also appear as a red asterisk in the vanilla Tab list. Server plugins and network conditions can affect detection. Install the matching theme and script together to use spectating and packet-based checks.
+Enable `Anti-cheat` under Misc to see violation levels and a `Watch` link in local chat. Expand any check to adjust its thresholds, time window, flag interval, and VL per flag. `Cheater VL` is the direct total needed to mark a player, defaulting to 11. `Reset VL` is off by default. Enable it to show `Reset Interval (s)` (default 30 s, range 5–600 s). The timer starts at the first flag in each player’s current window and clears that player’s total and per-check VL. Persistent marks are retained. Existing switches and marked-player records are retained. Auto Throw checks rapid, owner-linked throws while aiming at a player. Auto Bow checks owner-linked bow arrows approaching or hitting you. Telly Scaffold includes rising placements and recently completed jumps. Marks persist per server or world and appear as a red skull and a red asterisk in the vanilla Tab list.
+
+Use `.hack add <player>` to mark a player, `.hack delete <player>` to remove a mark, or `.hack list [page]` to display marked players. Click `[X]` to remove an entry. Deleting a mark also clears the player's current VL. Commands work while the detection module is switched off. Install the matching theme and script together. Server plugins and network conditions can affect observer-based checks.
 
 If the theme starts without a script heartbeat, it offers a link to download the script from GitHub Releases.
 

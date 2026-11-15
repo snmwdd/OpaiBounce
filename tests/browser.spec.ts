@@ -149,7 +149,7 @@ test('HUD shows real inventory events, skin crop, potion names and target health
     api.emit('targetChange',{target:{username:'Player',uuid:'test',actualHealth:16,maxHealth:20}});
     await expect(page.locator('.targethud .name')).toContainText('Player 16');await expect(page.locator('.effects')).toContainText('II');
     await expect(page.locator('.session .head img').first()).toBeVisible();
-    await expect(page.locator('.track>div')).toHaveAttribute('style',/80%/);
+    await expect(page.locator('.targethud .track>div')).toHaveAttribute('style',/scaleX\(0\.8\)/);
     await page.screenshot({path:'reports/hud.png'});expect(api.errors).toEqual([]);
 });
 
